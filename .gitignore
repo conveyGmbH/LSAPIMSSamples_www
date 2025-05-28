@@ -17,10 +17,11 @@
 mono_crash.*
 
 #remove .env file
-./salesforce-backend/.env
+./dynamics-backend/.env
 **/.env
-./salesforce-backend/.env
+./dynamics-backend/.env
 ./config.txt
+./data.json
 
 # dev files
 ./config.txt
@@ -43,8 +44,8 @@ bld/
 [Ll]ogs/
 
 # Remove gitIgnore from the root of the repository
-./salesforce-backend/.env
-salesforce-backend/.env
+./dynamics-backend/.env
+dynamics-backend/.env
 **/.env
 
 
