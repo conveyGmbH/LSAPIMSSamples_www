@@ -1,0 +1,997 @@
+// // DynamicsService.js - Version compatible avec votre configuration Postman
+// class DynamicsService {
+//   constructor() {
+//     this.apiBaseUrl = 'http://localhost:3000/api';
+//     console.log('DynamicsService initialized (Postman-compatible)');
+//   }
+
+//   // Singleton pattern implementation
+//   static getInstance() {
+//     if (!DynamicsService.instance) {
+//       DynamicsService.instance = new DynamicsService();
+//     }
+//     return DynamicsService.instance;
+//   }
+
+//   // Check if client configuration exists (minimal pour implicit flow)
+//   hasClientConfig() {
+//     const clientId = localStorage.getItem('DYNAMICS_CLIENT_ID');
+//     const resourceUrl = localStorage.getItem('DYNAMICS_RESOURCE_URL');
+//     return !!(clientId && resourceUrl);
+//   }
+
+//   // Get client configuration
+//   getClientConfig() {
+//     return {
+//       clientId: localStorage.getItem('DYNAMICS_CLIENT_ID'),
+//       clientSecret: localStorage.getItem('DYNAMICS_CLIENT_SECRET'), // Optionnel pour implicit
+//       tenantId: localStorage.getItem('DYNAMICS_TENANT_ID') || 'common', // Par défaut 'common'
+//       resourceUrl: localStorage.getItem('DYNAMICS_RESOURCE_URL'),
+//       redirectUri: localStorage.getItem('DYNAMICS_REDIRECT_URI'),
+//       useImplicitFlow: localStorage.getItem('DYNAMICS_USE_IMPLICIT_FLOW') !== 'false' // Par défaut true
+//     };
+//   }
+
+//   // Apply Postman preset directly
+//   applyPostmanConfig() {
+//     // Configuration exacte de votre Postman
+//     const postmanConfig = {
+//       clientId: 'c9db434e-245a-4f6f-a43e-1e6af5dccd7e',
+//       resourceUrl: 'https://org54e712bc.crm4.dynamics.com',
+//       tenantId: 'common',
+//       redirectUri: `${window.location.protocol}//${window.location.host}/api/dynamics/oauth2/callback`,
+//       useImplicitFlow: true
+//     };
+
+//     return this.saveClientConfig(postmanConfig);
+//   }
+
+//   // Save client configuration
+//   async saveClientConfig(config) {
+//     try {
+//       // Validation minimale pour implicit flow
+//       if (!config.clientId || !config.resourceUrl) {
+//         return {
+//           success: false,
+//           message: 'Client ID and Resource URL are required'
+//         };
+//       }
+
+//       // Store configuration
+//       localStorage.setItem('DYNAMICS_CLIENT_ID', config.clientId);
+//       if (config.clientSecret) {
+//         localStorage.setItem('DYNAMICS_CLIENT_SECRET', config.clientSecret);
+//       }
+//       localStorage.setItem('DYNAMICS_TENANT_ID', config.tenantId || 'common');
+//       localStorage.setItem('DYNAMICS_RESOURCE_URL', config.resourceUrl);
+//       localStorage.setItem('DYNAMICS_REDIRECT_URI', config.redirectUri || this.getDefaultRedirectUri());
+//       localStorage.setItem('DYNAMICS_USE_IMPLICIT_FLOW', config.useImplicitFlow !== false ? 'true' : 'false');
+
+//       console.log('✅ Configuration saved:', {
+//         clientId: config.clientId,
+//         resourceUrl: config.resourceUrl,
+//         tenantId: config.tenantId || 'common',
+//         useImplicitFlow: config.useImplicitFlow !== false
+//       });
+
+//       return {
+//         success: true,
+//         message: 'Configuration saved successfully'
+//       };
+//     } catch (error) {
+//       console.error('Error saving client config:', error);
+//       return {
+//         success: false,
+//         message: `Failed to save configuration: ${error.message}`
+//       };
+//     }
+//   }
+
+//   // Get default redirect URI
+//   getDefaultRedirectUri() {
+//     return `${window.location.protocol}//${window.location.host}/api/dynamics/oauth2/callback`;
+//   }
+
+//   // Clear client configuration
+//   async clearClientConfig() {
+//     try {
+//       const keys = [
+//         'DYNAMICS_CLIENT_ID',
+//         'DYNAMICS_CLIENT_SECRET', 
+//         'DYNAMICS_TENANT_ID',
+//         'DYNAMICS_RESOURCE_URL',
+//         'DYNAMICS_REDIRECT_URI',
+//         'DYNAMICS_USE_IMPLICIT_FLOW'
+//       ];
+
+//       keys.forEach(key => localStorage.removeItem(key));
+//       this.clearAuthData();
+
+//       return {
+//         success: true,
+//         message: 'Configuration cleared successfully'
+//       };
+//     } catch (error) {
+//       console.error('Error clearing client config:', error);
+//       return {
+//         success: false,
+//         message: `Failed to clear configuration: ${error.message}`
+//       };
+//     }
+//   }
+
+//   // Test connection (simplified for implicit flow)
+//   async testConnection() {
+//     try {
+//       if (!this.hasClientConfig()) {
+//         return {
+//           success: false,
+//           message: 'Configuration incomplete'
+//         };
+//       }
+
+//       // Pour implicit flow, on teste juste la construction de l'URL
+//       const config = this.getClientConfig();
+//       const authUrl = this.buildImplicitAuthUrl(config);
+      
+//       if (authUrl && authUrl.includes('login.microsoftonline.com')) {
+//         return {
+//           success: true,
+//           message: 'Configuration appears valid (implicit flow)'
+//         };
+//       } else {
+//         return {
+//           success: false,
+//           message: 'Invalid configuration for implicit flow'
+//         };
+//       }
+//     } catch (error) {
+//       console.error('Connection test error:', error);
+//       return {
+//         success: false,
+//         message: `Connection test failed: ${error.message}`
+//       };
+//     }
+//   }
+
+//   // Build implicit flow auth URL (comme Postman)
+//   buildImplicitAuthUrl(config) {
+//     const params = new URLSearchParams({
+//       client_id: config.clientId,
+//       response_type: 'token', // Implicit flow
+//       redirect_uri: config.redirectUri,
+//       resource: config.resourceUrl, // OAuth v1.0 style
+//       scope: `${config.resourceUrl}/.default`,
+//       state: 'dynamics_auth_' + Date.now(),
+//       nonce: 'nonce_' + Math.random().toString(36)
+//     });
+
+//     // OAuth v1.0 endpoint (comme Postman)
+//     return `https://login.microsoftonline.com/common/oauth2/authorize?${params.toString()}`;
+//   }
+
+//   // Initialize OAuth flow (Implicit Flow comme Postman)
+//   async initializeAuth() {
+//     try {
+//       const config = this.getClientConfig();
+      
+//       if (!config.clientId || !config.resourceUrl) {
+//         throw new Error('Dynamics CRM client configuration missing. Please configure it first.');
+//       }
+
+//       const authUrl = this.buildImplicitAuthUrl(config);
+//       console.log('🚀 Opening Dynamics authentication URL (Implicit Flow - Postman style):', authUrl);
+
+//       // Open the authorization URL in a popup window
+//       const authWindow = window.open(
+//         authUrl, 
+//         'DynamicsAuth', 
+//         'width=600,height=700,scrollbars=yes,resizable=yes,status=yes,location=yes'
+//       );
+      
+//       if (!authWindow) {
+//         throw new Error('Popup blocked! Please allow popups for this site and try again.');
+//       }
+
+//       return new Promise((resolve, reject) => {
+//         // Handle timeout (5 minutes)
+//         const timeout = setTimeout(() => {
+//           if (!authWindow.closed) {
+//             authWindow.close();
+//           }
+//           reject(new Error('Authentication timed out. Please try again.'));
+//         }, 300000);
+
+//         // Check for token in URL fragment (implicit flow)
+//         const checkForToken = setInterval(() => {
+//           try {
+//             if (authWindow.closed) {
+//               clearInterval(checkForToken);
+//               clearTimeout(timeout);
+//               reject(new Error('Authentication cancelled by user'));
+//               return;
+//             }
+
+//             // Try to access the popup's URL to check for token
+//             let currentUrl;
+//             try {
+//               currentUrl = authWindow.location.href;
+//             } catch (e) {
+//               // Cross-origin error, popup is still on Microsoft's domain
+//               return;
+//             }
+
+//             // If we can access the URL, check if it contains our callback
+//             if (currentUrl && currentUrl.includes(config.redirectUri)) {
+//               clearInterval(checkForToken);
+//               clearTimeout(timeout);
+              
+//               // Parse token from URL fragment (implicit flow)
+//               const urlObj = new URL(currentUrl);
+//               const fragment = urlObj.hash.substring(1);
+//               const params = new URLSearchParams(fragment);
+              
+//               const accessToken = params.get('access_token');
+//               const error = params.get('error');
+//               const errorDescription = params.get('error_description');
+              
+//               authWindow.close();
+              
+//               if (error) {
+//                 reject(new Error(`Authentication error: ${errorDescription || error}`));
+//               } else if (accessToken) {
+//                 console.log('✅ Token received successfully via implicit flow');
+                
+//                 // Store the token
+//                 const expiresIn = params.get('expires_in');
+//                 const expiresAt = expiresIn ? Date.now() + (parseInt(expiresIn) * 1000) : null;
+                
+//                 this.storeAuthData({
+//                   accessToken: accessToken,
+//                   resourceUrl: config.resourceUrl,
+//                   expiresAt: expiresAt,
+//                   tokenType: params.get('token_type') || 'Bearer'
+//                 });
+                
+//                 resolve({ 
+//                   access_token: accessToken,
+//                   token_type: 'Bearer',
+//                   expires_in: expiresIn,
+//                   resource: config.resourceUrl
+//                 });
+//               } else {
+//                 reject(new Error('No access token received'));
+//               }
+//             }
+//           } catch (e) {
+//             // Continue checking
+//           }
+//         }, 1000);
+//       });
+//     } catch (error) {
+//       console.error('Error initializing implicit flow:', error);
+//       throw error;
+//     }
+//   }
+
+//   // Get authentication data from local storage
+//   getAuthData() {
+//     try {
+//       const accessToken = localStorage.getItem('DYNAMICS_ACCESS_TOKEN');
+//       const resourceUrl = localStorage.getItem('DYNAMICS_RESOURCE_URL');
+
+//       if (!accessToken || !resourceUrl) {
+//         return null;
+//       }
+
+//       return {
+//         accessToken,
+//         resourceUrl,
+//         expiresAt: localStorage.getItem('DYNAMICS_EXPIRES_AT'),
+//         tokenType: localStorage.getItem('DYNAMICS_TOKEN_TYPE') || 'Bearer'
+//       };
+//     } catch (error) {
+//       console.error('Error retrieving auth data:', error);
+//       return null;
+//     }
+//   }
+
+//   // Store authentication data
+//   storeAuthData(authData) {
+//     if (!authData || !authData.accessToken) {
+//       console.error('Invalid auth data provided:', authData);
+//       return false;
+//     }
+
+//     try {
+//       localStorage.setItem('DYNAMICS_ACCESS_TOKEN', authData.accessToken);
+      
+//       if (authData.resourceUrl) {
+//         localStorage.setItem('DYNAMICS_RESOURCE_URL', authData.resourceUrl);
+//       }
+//       if (authData.expiresAt) {
+//         localStorage.setItem('DYNAMICS_EXPIRES_AT', authData.expiresAt.toString());
+//       }
+//       if (authData.tokenType) {
+//         localStorage.setItem('DYNAMICS_TOKEN_TYPE', authData.tokenType);
+//       }
+      
+//       console.log('✅ Auth data stored successfully');
+//       return true;
+//     } catch (error) {
+//       console.error('Error storing auth data:', error);
+//       return false;
+//     }
+//   }
+
+//   // Clear authentication data
+//   clearAuthData() {
+//     try {
+//       const authKeys = [
+//         'DYNAMICS_ACCESS_TOKEN',
+//         'DYNAMICS_EXPIRES_AT',
+//         'DYNAMICS_TOKEN_TYPE'
+//       ];
+      
+//       authKeys.forEach(key => localStorage.removeItem(key));
+//       return true;
+//     } catch (error) {
+//       console.error('Error clearing auth data:', error);
+//       return false;
+//     }
+//   }
+
+//   // Check if token is expired
+//   isTokenExpired() {
+//     const expiresAt = localStorage.getItem('DYNAMICS_EXPIRES_AT');
+//     if (!expiresAt) return true;
+//     return Date.now() > parseInt(expiresAt);
+//   }
+
+//   // Validate token (simplified for implicit flow)
+//   async isTokenValid() {
+//     try {
+//       const authData = this.getAuthData();
+//       if (!authData || !authData.accessToken) {
+//         return false;
+//       }
+      
+//       // Check if token is expired
+//       if (this.isTokenExpired()) {
+//         console.log('❌ Token expired');
+//         this.clearAuthData();
+//         return false;
+//       }
+      
+//       // Test token validity by making a simple API call
+//       const response = await fetch(
+//         `${this.apiBaseUrl}/dynamics/userinfo?accessToken=${encodeURIComponent(authData.accessToken)}&resourceUrl=${encodeURIComponent(authData.resourceUrl)}`
+//       );
+      
+//       const isValid = response.ok;
+//       console.log(isValid ? '✅ Token is valid' : '❌ Token is invalid');
+      
+//       return isValid;
+//     } catch (error) {
+//       console.error("Token validation error:", error);
+//       return false;
+//     }
+//   }
+
+//   // Check connection status and get user info
+//   async checkConnection() {
+//     try {
+//       const authData = this.getAuthData();
+//       if (!authData) {
+//         return { connected: false, message: 'Not authenticated with Dynamics CRM' };
+//       }
+
+//       const isValid = await this.isTokenValid();
+      
+//       if (!isValid) {
+//         return { connected: false, message: 'Authentication expired or invalid' };
+//       }
+
+//       // Get user info through the proxy
+//       try {
+//         const response = await fetch(
+//           `${this.apiBaseUrl}/dynamics/userinfo?accessToken=${encodeURIComponent(authData.accessToken)}&resourceUrl=${encodeURIComponent(authData.resourceUrl)}`
+//         );
+        
+//         if (response.ok) {
+//           const userInfo = await response.json();
+//           return { 
+//             connected: true,
+//             userInfo: {
+//               id: userInfo.systemuserid,
+//               name: userInfo.fullname,
+//               email: userInfo.internalemailaddress,
+//               organization: userInfo._businessunitid_value
+//             }
+//           };
+//         }
+//       } catch (infoError) {
+//         console.warn('Could not retrieve user info:', infoError);
+//       }
+
+//       return { connected: true };
+//     } catch (error) {
+//       console.error('Connection check error:', error);
+//       return { connected: false, message: error.message };
+//     }
+//   }
+
+//   // Logout from Dynamics CRM
+//   async logout() {
+//     try {
+//       this.clearAuthData();
+//       return { success: true, message: 'Logged out successfully' };
+//     } catch (error) {
+//       console.error('Logout error:', error);
+//       return { success: false, message: error.message };
+//     }
+//   }
+
+//   // Transfer a lead to Dynamics CRM
+//   async transferLead(leadData, attachments = []) {
+//     try {
+//       if (!leadData) {
+//         throw new Error('No lead data provided');
+//       }
+
+//       const authData = this.getAuthData();
+//       if (!authData) {
+//         throw new Error('Not authenticated with Dynamics CRM');
+//       }
+
+//       // Ensure token is valid
+//       const isValid = await this.isTokenValid();
+//       if (!isValid) {
+//         throw new Error('Authentication expired. Please reconnect to Dynamics CRM.');
+//       }
+
+//       const response = await fetch(`${this.apiBaseUrl}/dynamics/direct-lead-transfer`, {
+//         method: 'POST',
+//         headers: { 'Content-Type': 'application/json' },
+//         body: JSON.stringify({
+//           accessToken: authData.accessToken,
+//           resourceUrl: authData.resourceUrl,
+//           leadData: leadData,
+//           attachments: attachments
+//         })
+//       });
+
+//       if (!response.ok) {
+//         const errorData = await response.json();
+//         console.error('Lead transfer error:', errorData);
+//         throw new Error(errorData.message || 'Failed to transfer lead');
+//       }
+
+//       const result = await response.json();
+//       return result;
+//     } catch (error) {
+//       console.error('Lead transfer error:', error);
+//       throw error;
+//     }
+//   }
+
+//   // Quick setup with Postman configuration
+//   async setupPostmanConfig() {
+//     console.log('🔧 Setting up Postman-compatible configuration...');
+//     const result = this.applyPostmanConfig();
+    
+//     if (result.success) {
+//       console.log('✅ Postman configuration applied successfully');
+//       console.log('Configuration details:', this.getClientConfig());
+//     }
+    
+//     return result;
+//   }
+// }
+
+// export default DynamicsService;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Service Dynamics 365 - Version simplifiée avec MSAL
+ * Utilise seulement Client ID, Tenant ID et Resource URL
+ */
+class DynamicsService {
+  constructor() {
+    this.msalInstance = null;
+    this.isConnected = false;
+    this.currentUser = null;
+    this.config = {
+      clientId: '',
+      tenantId: '',
+      resourceUrl: '',
+      redirectUri: window.location.origin
+    };
+    
+    // Clés de stockage
+    this.storageKeys = {
+      clientId: 'DYNAMICS_CLIENT_ID',
+      tenantId: 'DYNAMICS_TENANT_ID',
+      resourceUrl: 'DYNAMICS_RESOURCE_URL'
+    };
+
+    this.loadSavedConfig();
+    console.log('✅ DynamicsService initialized');
+  }
+
+  // Singleton pattern
+  static getInstance() {
+    if (!DynamicsService.instance) {
+      DynamicsService.instance = new DynamicsService();
+    }
+    return DynamicsService.instance;
+  }
+
+  // Charger la configuration sauvegardée
+  loadSavedConfig() {
+    try {
+      this.config = {
+        clientId: localStorage.getItem(this.storageKeys.clientId) || '',
+        tenantId: localStorage.getItem(this.storageKeys.tenantId) || '',
+        resourceUrl: localStorage.getItem(this.storageKeys.resourceUrl) || '',
+        redirectUri: window.location.origin
+      };
+
+      // Initialiser MSAL si on a les infos nécessaires
+      if (this.config.clientId && this.config.tenantId) {
+        this.initializeMsal();
+      }
+    } catch (error) {
+      console.error('❌ Error loading config:', error);
+    }
+  }
+
+  // Sauvegarder la configuration
+  saveConfig(config) {
+    try {
+      // Validation des champs requis
+      if (!config.clientId || !config.tenantId || !config.resourceUrl) {
+        throw new Error('Client ID, Tenant ID et Resource URL sont requis');
+      }
+
+      // Validation format GUID
+      const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!guidRegex.test(config.clientId)) {
+        throw new Error('Client ID doit être un GUID valide');
+      }
+      if (!guidRegex.test(config.tenantId)) {
+        throw new Error('Tenant ID doit être un GUID valide');
+      }
+
+      // Validation URL
+      try {
+        new URL(config.resourceUrl);
+      } catch {
+        throw new Error('Resource URL doit être une URL valide');
+      }
+
+      // Sauvegarder
+      this.config = { ...config, redirectUri: window.location.origin };
+      localStorage.setItem(this.storageKeys.clientId, config.clientId);
+      localStorage.setItem(this.storageKeys.tenantId, config.tenantId);
+      localStorage.setItem(this.storageKeys.resourceUrl, config.resourceUrl);
+
+      // Réinitialiser MSAL
+      this.initializeMsal();
+
+      return { success: true, message: 'Configuration sauvegardée avec succès' };
+    } catch (error) {
+      console.error('❌ Error saving config:', error);
+      return { success: false, message: error.message };
+    }
+  }
+
+  // Initialiser MSAL
+  initializeMsal() {
+    if (!this.config.clientId || !this.config.tenantId) {
+      console.warn('⚠️ Cannot initialize MSAL: missing config');
+      return;
+    }
+
+    try {
+      const msalConfig = {
+        auth: {
+          clientId: this.config.clientId,
+          authority: `https://login.microsoftonline.com/${this.config.tenantId}`,
+          redirectUri: this.config.redirectUri
+        },
+        cache: {
+          cacheLocation: "sessionStorage",
+          storeAuthStateInCookie: false
+        }
+      };
+
+      this.msalInstance = new msal.PublicClientApplication(msalConfig);
+
+      // Vérifier si déjà connecté
+      this.msalInstance.handleRedirectPromise().then(() => {
+        const accounts = this.msalInstance.getAllAccounts();
+        if (accounts.length > 0) {
+          this.currentUser = accounts[0];
+          this.isConnected = true;
+          console.log('✅ User already authenticated:', this.currentUser.name);
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Error initializing MSAL:', error);
+    }
+  }
+
+  // Vérifier si la configuration est complète
+  hasValidConfig() {
+    return !!(this.config.clientId && this.config.tenantId && this.config.resourceUrl);
+  }
+
+  // Se connecter à Dynamics 365
+  async connect() {
+    if (!this.msalInstance) {
+      throw new Error('Veuillez d\'abord configurer la connexion Dynamics 365');
+    }
+
+    try {
+      const loginRequest = {
+        scopes: [
+          `${this.config.resourceUrl}/user_impersonation`,
+          "openid",
+          "profile"
+        ]
+      };
+
+      console.log('🔄 Starting authentication...');
+      const loginResponse = await this.msalInstance.loginPopup(loginRequest);
+      this.currentUser = loginResponse.account;
+      this.isConnected = true;
+
+      console.log('✅ Successfully connected to Dynamics 365:', this.currentUser.name);
+      return { success: true, user: this.currentUser };
+
+    } catch (error) {
+      console.error('❌ Connection error:', error);
+      throw new Error(`Connexion échouée: ${error.message}`);
+    }
+  }
+
+  // Se déconnecter
+  async disconnect() {
+    if (this.msalInstance) {
+      try {
+        await this.msalInstance.logoutPopup();
+      } catch (error) {
+        console.error('❌ Logout error:', error);
+      }
+    }
+
+    this.currentUser = null;
+    this.isConnected = false;
+
+    console.log('✅ Disconnected from Dynamics 365');
+    return { success: true };
+  }
+
+  // Obtenir un token d'accès
+  async getAccessToken(scopes = null) {
+    if (!this.msalInstance || !this.isConnected) {
+      throw new Error('Pas connecté à Dynamics 365');
+    }
+
+    const accounts = this.msalInstance.getAllAccounts();
+    if (accounts.length === 0) {
+      throw new Error('Aucun compte trouvé');
+    }
+
+    const request = {
+      scopes: scopes || [`${this.config.resourceUrl}/user_impersonation`],
+      account: accounts[0]
+    };
+
+    try {
+      const response = await this.msalInstance.acquireTokenSilent(request);
+      return response.accessToken;
+    } catch (error) {
+      console.log('🔄 Silent token failed, using popup');
+      const response = await this.msalInstance.acquireTokenPopup(request);
+      return response.accessToken;
+    }
+  }
+
+  // Vérifier le statut de connexion
+  async checkConnection() {
+    try {
+      if (!this.isConnected || !this.currentUser) {
+        return { connected: false, message: 'Pas connecté à Dynamics 365' };
+      }
+
+      // Tester la validité du token
+      const token = await this.getAccessToken();
+      const response = await fetch(`${this.config.resourceUrl}/api/data/v9.2/WhoAmI`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'OData-MaxVersion': '4.0',
+          'OData-Version': '4.0',
+          'Accept': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        return {
+          connected: true,
+          user: {
+            name: this.currentUser.name,
+            email: this.currentUser.username
+          }
+        };
+      } else {
+        return { connected: false, message: 'Validation du token échouée' };
+      }
+
+    } catch (error) {
+      console.error('❌ Connection check error:', error);
+      return { connected: false, message: error.message };
+    }
+  }
+
+  // Transférer un lead vers Dynamics 365
+  async transferLead(wceLeadData, attachments = []) {
+    if (!this.isConnected) {
+      throw new Error('Pas connecté à Dynamics 365. Veuillez vous connecter d\'abord.');
+    }
+
+    try {
+      const token = await this.getAccessToken();
+      
+      // Mapper les données WCE vers Dynamics
+      const dynamicsLeadData = this.mapWceLeadToDynamics(wceLeadData);
+      
+      console.log('🔄 Transferring lead to Dynamics 365...');
+
+      // Créer le lead dans Dynamics 365
+      const response = await fetch(`${this.config.resourceUrl}/api/data/v9.2/leads`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'OData-MaxVersion': '4.0',
+          'OData-Version': '4.0',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(dynamicsLeadData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || `HTTP ${response.status}: Échec de création du lead`);
+      }
+
+      // Extraire l'ID du lead
+      const leadUri = response.headers.get('OData-EntityId');
+      const leadId = leadUri ? leadUri.split('(')[1].split(')')[0] : null;
+
+      console.log('✅ Lead created successfully with ID:', leadId);
+
+      // Uploader les pièces jointes si disponibles
+      let attachmentResults = { total: 0, transferred: 0, errors: [] };
+      if (attachments.length > 0 && leadId) {
+        attachmentResults = await this.uploadAttachments(leadId, attachments, token);
+      }
+
+      return {
+        success: true,
+        leadId: leadId,
+        dynamicsUrl: `${this.config.resourceUrl}/main.aspx?etn=lead&id=${leadId}&newWindow=true&pagetype=entityrecord`,
+        message: 'Lead transféré avec succès vers Dynamics 365',
+        attachments: attachmentResults
+      };
+
+    } catch (error) {
+      console.error('❌ Lead transfer error:', error);
+      throw error;
+    }
+  }
+
+  // Mapper les données WCE vers Dynamics
+  mapWceLeadToDynamics(wceLeadData) {
+    const leadData = {
+      // Informations de base
+      subject: `Lead from ${wceLeadData.FirstName || ''} ${wceLeadData.LastName || ''}`.trim() || 'WCE Lead',
+      firstname: wceLeadData.FirstName || null,
+      lastname: wceLeadData.LastName || null,
+      jobtitle: wceLeadData.JobTitle || null,
+      companyname: wceLeadData.CompanyName || null,
+      
+      // Informations de contact
+      emailaddress1: wceLeadData.EMailAddress1 || null,
+      telephone1: wceLeadData.Address1_Telephone1 || null,
+      mobilephone: wceLeadData.MobilePhone || null,
+      fax: wceLeadData.Address1_Fax || null,
+      websiteurl: wceLeadData.WebSiteUrl || null,
+      
+      // Adresse
+      address1_line1: wceLeadData.Address1_Line1 || null,
+      address1_city: wceLeadData.Address1_City || null,
+      address1_stateorprovince: wceLeadData.Address1_StateOrProvince || null,
+      address1_postalcode: wceLeadData.Address1_PostalCode || null,
+      address1_country: wceLeadData.Address1_Country || null,
+      
+      // Informations supplémentaires
+      description: this.buildDescription(wceLeadData),
+      
+      // Source du lead
+      leadsourcecode: 1 // WCE
+    };
+
+    // Supprimer les valeurs nulles
+    Object.keys(leadData).forEach(key => {
+      if (leadData[key] === null || leadData[key] === undefined || leadData[key] === '') {
+        delete leadData[key];
+      }
+    });
+
+    return leadData;
+  }
+
+  // Construire la description à partir des données WCE
+  buildDescription(wceLeadData) {
+    const descriptionParts = [];
+    
+    if (wceLeadData.Description) {
+      descriptionParts.push(`Description: ${wceLeadData.Description}`);
+    }
+    
+    if (wceLeadData.Topic) {
+      descriptionParts.push(`Sujet: ${wceLeadData.Topic}`);
+    }
+    
+    if (wceLeadData.Department) {
+      descriptionParts.push(`Département: ${wceLeadData.Department}`);
+    }
+    
+    if (wceLeadData.EventId) {
+      descriptionParts.push(`Event ID: ${wceLeadData.EventId}`);
+    }
+    
+    if (wceLeadData.LeadId) {
+      descriptionParts.push(`ID Lead WCE original: ${wceLeadData.LeadId}`);
+    }
+    
+    descriptionParts.push(`Transféré depuis WCE le: ${new Date().toLocaleString()}`);
+    
+    return descriptionParts.length > 0 ? descriptionParts.join('\n') : null;
+  }
+
+  // Uploader les pièces jointes
+  async uploadAttachments(leadId, attachments, token) {
+    const results = {
+      total: attachments.length,
+      transferred: 0,
+      errors: []
+    };
+
+    console.log(`🔄 Uploading ${attachments.length} attachments...`);
+
+    for (const attachment of attachments) {
+      try {
+        const annotationData = {
+          subject: attachment.subject || attachment.filename,
+          filename: attachment.filename,
+          documentbody: attachment.documentbody,
+          mimetype: attachment.mimetype,
+          filesize: attachment.filesize,
+          'objectid_lead@odata.bind': `/leads(${leadId})`
+        };
+
+        const response = await fetch(`${this.config.resourceUrl}/api/data/v9.2/annotations`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'OData-MaxVersion': '4.0',
+            'OData-Version': '4.0',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(annotationData)
+        });
+
+        if (response.ok) {
+          results.transferred++;
+          console.log(`✅ Attachment uploaded: ${attachment.filename}`);
+        } else {
+          const errorData = await response.json();
+          const errorMsg = errorData.error?.message || `HTTP ${response.status}`;
+          results.errors.push(`${attachment.filename}: ${errorMsg}`);
+          console.error(`❌ Failed to upload ${attachment.filename}:`, errorMsg);
+        }
+
+      } catch (error) {
+        console.error(`❌ Error uploading ${attachment.filename}:`, error);
+        results.errors.push(`${attachment.filename}: ${error.message}`);
+      }
+    }
+
+    console.log(`✅ Upload completed: ${results.transferred}/${results.total} successful`);
+    return results;
+  }
+
+  // Obtenir la configuration actuelle
+  getConfig() {
+    return { ...this.config };
+  }
+
+  // Effacer toutes les données
+  clearConfig() {
+    this.config = {
+      clientId: '',
+      tenantId: '',
+      resourceUrl: '',
+      redirectUri: window.location.origin
+    };
+    
+    Object.values(this.storageKeys).forEach(key => {
+      localStorage.removeItem(key);
+    });
+    
+    this.msalInstance = null;
+    this.isConnected = false;
+    this.currentUser = null;
+    
+    console.log('✅ Configuration cleared');
+  }
+
+  // Tester la configuration
+  async testConfig() {
+    if (!this.hasValidConfig()) {
+      return { success: false, message: 'Configuration incomplète' };
+    }
+
+    try {
+      const authorityUrl = `https://login.microsoftonline.com/${this.config.tenantId}/v2.0/.well-known/openid_configuration`;
+      const response = await fetch(authorityUrl);
+      
+      if (response.ok) {
+        return { success: true, message: 'Configuration valide' };
+      } else {
+        return { success: false, message: 'Tenant ID ou URL d\'autorité invalide' };
+      }
+    } catch (error) {
+      return { success: false, message: `Test de configuration échoué: ${error.message}` };
+    }
+  }
+
+  // Obtenir le statut de connexion
+  getConnectionStatus() {
+    return {
+      isConfigured: this.hasValidConfig(),
+      isConnected: this.isConnected,
+      currentUser: this.currentUser ? {
+        name: this.currentUser.name,
+        email: this.currentUser.username
+      } : null
+    };
+  }
+}
+
+// Export pour modules ES6
+export default DynamicsService;
+
+// Attacher à window pour accès global
+if (typeof window !== 'undefined') {
+  window.DynamicsService = DynamicsService;
+}

@@ -1,17 +1,16 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <title>Lead Success - Transfer to Microsoft Dynamics CRM</title>
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy"
+    <meta http-equiv="Content-Security-Policy" 
     content="default-src 'self' data: gap: https://ssl.gstatic.com 'unsafe-eval' 'unsafe-inline' https://delightful-desert-016e2a610.4.azurestaticapps.net/ https://lsapisamplesbackend-bhesadgtbja4dmgq.germanywestcentral-01.azurewebsites.net/; style-src 'self' 'unsafe-inline'; media-src 'self' data: https://*.convey.de http://*.convey.de; object-src 'self' blob: data:; frame-src 'self' blob: data:; connect-src 'self' blob: http://*.convey.de https://*.convey.de ws://127.0.0.1:5504 http://localhost:5504 https://brave-bush-0041ef403.6.azurestaticapps.net/ http://localhost:3000 http://localhost:5504 ws://localhost:5504 https://delightful-desert-016e2a610.4.azurestaticapps.net/ https://lsapisamplesbackend-bhesadgtbja4dmgq.germanywestcentral-01.azurewebsites.net/ https://*.microsoftonline.com https://*.dynamics.com https://*.crm.dynamics.com;" />
-    <meta name="viewport"
+    <meta name="viewport" 
         content="user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, width=device-width" />
     <link href="../css/displayWceLeadTransfer.css" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="../images/api-sf.ico">
 </head>
 <body>
-    <!-- Header -->
     <header class="main-header">
         <div class="logo">
             <img src="../images/leadsuccess_white.svg" alt="Lead Success Logo" />
@@ -19,7 +18,7 @@
         <div class="header-right">
             <button id="logoutButton" class="logout-button">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                     <polyline points="16 17 21 12 16 7"></polyline>
                     <line x1="21" y1="12" x2="9" y2="12"></line>
@@ -29,39 +28,50 @@
         </div>
     </header>
 
-    <!-- Sub Header -->
     <div class="sub-header">
-        <h1>Microsoft Dynamics 365 Lead Transfer</h1>
-        <h3>API documentation available 
-            <a href="docs/LeadSuccess_API_for_Dynamics.pdf" download>here</a>
+        <h1 class="head-line">Microsoft Dynamics API Manager</h1>
+        <h3>API documentation available
+            <a href="/docs/LeadSuccess_API_for_Dynamics.pdf" download>here</a>
             -
             <button id="postmanButton" class="postman-button">
-                <img src="../images/postman-icon.svg" alt="Postman" width="16" height="16">
+                <img src="/images/postman-icon.svg" alt="Postman" width="16" height="16">
                 Test API in Postman
             </button>
         </h3>
         <h2>Transfer Lead to Microsoft Dynamics CRM</h2>
     </div>
 
-    <!-- Page Title -->
     <div class="page-title">
         <div class="button-group">
             <button id="backButton" class="action-button">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="19" y1="12" x2="5" y2="12"></line>
                     <polyline points="12 19 5 12 12 5"></polyline>
                 </svg>
                 <span>Back</span>
             </button>
         </div>
-        
         <h2>Lead Data Preview</h2>
-        
-        <div class="config-button-wrapper">
+        <div class="dynamics-connection-wrapper">
+            <div class="dynamics-connection-status">
+                <div class="status-indicator not-connected"></div>
+                <span>Not authenticated with Dynamics CRM</span>
+            </div>
+
+            <button id="disconnectDynamicsBtn" class="disconnect-btn" style="display: none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                Disconnect from Dynamics
+            </button>
+
             <button id="dynamicsConfigButton" class="dynamics-config-button">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="3"></circle>
                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                 </svg>
@@ -70,13 +80,12 @@
         </div>
     </div>
 
-    <!-- Container -->
     <div class="container">
-        <!-- Configuration Required Notice -->
+        <!-- Configuration required notice -->
         <div id="dynamics-config-required-notice" class="config-required-notice" style="display: none;">
             <div class="notice-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10"></circle>
                     <line x1="12" y1="8" x2="12" y2="12"></line>
                     <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -91,11 +100,11 @@
             </button>
         </div>
 
-        <!-- Authentication Required Notice -->
+        <!-- Authentication required notice -->
         <div id="dynamics-auth-required-notice" class="auth-required-notice" style="display: none;">
             <div class="notice-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10"></circle>
                     <line x1="12" y1="8" x2="12" y2="12"></line>
                     <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -110,30 +119,22 @@
             </button>
         </div>
 
-        <!-- Status Card -->
-        <div class="card status-card-container">
-            <div class="status-card">
-                <div class="status-indicator status-disconnected" id="connectionStatus"></div>
-                <div class="status-content">
-                    <h3 id="connectionText">Not connected to Dynamics 365</h3>
-                    <div id="userInfo" class="user-info-container" style="display: none;">
-                        <div class="user-info">
-                            <div class="user-avatar" id="userAvatar">U</div>
-                            <div class="user-details">
-                                <strong id="userName">Unknown User</strong>
-                                <p id="userEmail">unknown@example.com</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="status-actions">
-                        <button id="connectButton" class="btn btn-primary">Connect to Dynamics 365</button>
-                        <button id="disconnectButton" class="btn btn-danger" style="display: none;">Disconnect</button>
-                    </div>
-                </div>
+        <div id="validation-summary" style="display: none;" class="status-warning">
+            <div class="status-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                        d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+            </div>
+            <div>
+                <strong>Validation Issues</strong>
+                <ul id="validation-issues"></ul>
             </div>
         </div>
 
-        <!-- Lead Preview -->
         <div class="lead-preview">
             <div class="preview-header">
                 <h3>Lead Information</h3>
@@ -144,58 +145,39 @@
             </div>
 
             <div id="leadData" class="lead-data">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <div>Loading lead data...</div>
-                </div>
+                <!-- Lead data will be displayed here -->
+                <div class="loading">Loading lead data...</div>
             </div>
 
-            <!-- Lead Attachments -->
-            <div id="leadAttachments" class="lead-attachments" style="display: none;">
-                <h4>Attachments to Transfer</h4>
-                <div id="attachmentsList" class="attachments-list">
-                    <!-- Attachments will be populated here -->
-                </div>
-                <p id="attachmentsCount" class="attachments-count">0 file(s) will be transferred with this lead</p>
-            </div>
+            <!-- Attachments section will be inserted here dynamically -->
 
             <div class="action-panel">
                 <button id="transferToDynamicsBtn" class="transfer-btn">
-                    <div class="btn-content">
-                        <div class="btn-spinner" style="display: none;">
-                            <div class="spinner-small"></div>
-                        </div>
-                        <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 5v14M19 12l-7 7-7-7" />
-                        </svg>
-                        <span class="btn-text">Connect and Transfer to Dynamics CRM</span>
-                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 5v14M19 12l-7 7-7-7" />
+                    </svg>
+                    Connect & Transfer to Dynamics CRM
                 </button>
             </div>
         </div>
 
-        <!-- Transfer Results -->
         <div class="transfer-results" id="transferResults" style="display: none;">
             <h3>Transfer Results</h3>
             <div id="transferStatus" class="transfer-status">
                 <!-- Transfer status will be displayed here -->
             </div>
         </div>
-
-        <!-- Recent Transfers -->
-        <div class="recent-transfers" id="recentTransfers" style="display: none;">
-            <h3>Recent Transfers</h3>
-            <div id="transfersList" class="transfers-list">
-                <!-- Recent transfers will be displayed here -->
-            </div>
-        </div>
     </div>
 
-    <!-- Error Message -->
     <div id="errorMessage" class="error-message" style="display: none;"></div>
 
-    <!-- Configuration Modal -->
+    <!-- User info container for dynamic insertion -->
+    <div id="dynamicsUserInfo" class="user-info-container" style="display:none;">
+        <!-- User info will be dynamically inserted here -->
+    </div>
+
+    <!-- Modal for Dynamics CRM Configuration -->
     <div id="dynamicsConfigModal" class="modal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
@@ -207,19 +189,27 @@
                     To connect to Microsoft Dynamics CRM, please provide your Azure AD App Registration credentials.
                     These settings are required to transfer leads to your Dynamics CRM instance.
                 </p>
-
+    
                 <div class="form-group">
                     <label for="dynamics-client-id" class="field-required">Client ID (Application ID)</label>
                     <input id="dynamics-client-id" type="text" required placeholder="Your Azure AD App Client ID" />
-                    <span class="help-text">
+                    <span class="help-text small">
                         Found in Azure Portal → App registrations → Your app → Overview
+                    </span>
+                </div>
+    
+                <div class="form-group">
+                    <label for="dynamics-client-secret">Client Secret</label>
+                    <input id="dynamics-client-secret" type="password" placeholder="Your Azure AD App Client Secret" />
+                    <span class="help-text small">
+                        Required for server-side applications. Found in Azure Portal → App registrations → Your app → Certificates & secrets
                     </span>
                 </div>
 
                 <div class="form-group">
                     <label for="dynamics-tenant-id" class="field-required">Tenant ID (Directory ID)</label>
                     <input id="dynamics-tenant-id" type="text" required placeholder="Your Azure AD Tenant ID" />
-                    <span class="help-text">
+                    <span class="help-text small">
                         Found in Azure Portal → Azure Active Directory → Properties → Tenant ID
                     </span>
                 </div>
@@ -227,54 +217,69 @@
                 <div class="form-group">
                     <label for="dynamics-resource-url" class="field-required">Dynamics CRM URL</label>
                     <input id="dynamics-resource-url" type="url" required placeholder="https://yourorg.crm.dynamics.com" />
-                    <span class="help-text">
+                    <span class="help-text small">
                         Your organization's Dynamics 365 URL (e.g., https://contoso.crm.dynamics.com)
                     </span>
                 </div>
-
-                <div class="help-section">
-                    <details>
-                        <summary>📋 How to configure Azure AD App Registration?</summary>
-                        <div class="help-content">
-                            <ol>
-                                <li><strong>Create App Registration:</strong>
-                                    <ul>
-                                        <li>Go to <a href="https://portal.azure.com" target="_blank">Azure Portal</a> → Azure Active Directory → App registrations</li>
-                                        <li>Click "New registration" or select an existing one</li>
-                                        <li>Note the <strong>Application (client) ID</strong> and <strong>Directory (tenant) ID</strong></li>
-                                    </ul>
-                                </li>
-                                <li><strong>Configure Authentication:</strong>
-                                    <ul>
-                                        <li>Go to "Authentication" section</li>
-                                        <li>Add a "Single-page application" platform</li>
-                                        <li>Add redirect URI: <code id="redirect-uri-example">https://your-domain.com</code></li>
-                                        <li>Enable "Access tokens" and "ID tokens"</li>
-                                    </ul>
-                                </li>
-                                <li><strong>Configure API Permissions:</strong>
-                                    <ul>
-                                        <li>Go to "API permissions"</li>
-                                        <li>Add permission → Dynamics CRM → Delegated permissions</li>
-                                        <li>Select "user_impersonation"</li>
-                                        <li>Grant admin consent if required</li>
-                                    </ul>
-                                </li>
-                            </ol>
-                            <p><strong>📖 Need help?</strong> 
-                                <a href="docs/Technical Documentation for Dynamics API Integration.pdf" download>
-                                    Download technical documentation
-                                </a>
-                            </p>
-                        </div>
-                    </details>
+    
+                <div class="form-group">
+                    <label for="dynamics-redirect-uri" class="field-required">Redirect URI</label>
+                    <input id="dynamics-redirect-uri" type="text" required placeholder="OAuth callback URL" />
+                    <span class="help-text small">
+                        Default: <span id="dynamics-default-callback-url">Loading...</span>
+                        <br />Must be configured in Azure AD App → Authentication → Redirect URIs
+                    </span>
                 </div>
             </div>
-
+    
+            <div class="help-section">
+                <details>
+                    <summary>📋 How to configure Azure AD App Registration?</summary>
+                    <div class="help-content">
+                        <ol>
+                            <li><strong>Create App Registration:</strong>
+                                <ul>
+                                    <li>Go to <a href="https://portal.azure.com" target="_blank">Azure Portal</a> → Azure Active Directory → App registrations</li>
+                                    <li>Click "New registration" or select an existing one</li>
+                                    <li>Note the <strong>Application (client) ID</strong> and <strong>Directory (tenant) ID</strong></li>
+                                </ul>
+                            </li>
+                            <li><strong>Configure Authentication:</strong>
+                                <ul>
+                                    <li>Go to "Authentication" section</li>
+                                    <li>Add redirect URI (shown above)</li>
+                                    <li>Enable "Access tokens" and "ID tokens" if using implicit flow</li>
+                                </ul>
+                            </li>
+                            <li><strong>Create Client Secret:</strong>
+                                <ul>
+                                    <li>Go to "Certificates & secrets"</li>
+                                    <li>Click "New client secret"</li>
+                                    <li>Copy the secret value immediately (it won't be shown again)</li>
+                                </ul>
+                            </li>
+                            <li><strong>Configure API Permissions:</strong>
+                                <ul>
+                                    <li>Go to "API permissions"</li>
+                                    <li>Add permission → Dynamics CRM → Delegated permissions</li>
+                                    <li>Select "user_impersonation"</li>
+                                    <li>Grant admin consent if required</li>
+                                </ul>
+                            </li>
+                        </ol>
+                        <p><strong>📖 Need more help?</strong> 
+                            <a href="/docs/Technical Documentation for Dynamics API Integration.pdf" download>
+                                Download Technical Documentation
+                            </a>
+                        </p>
+                    </div>
+                </details>
+            </div>
+    
             <div class="modal-footer">
                 <div id="dynamics-config-status" class="status-message"></div>
-                <button id="resetDynamicsConfigBtn" class="btn-secondary">Reset</button>
-                <button id="saveDynamicsConfigBtn" class="btn-primary">Save & Test</button>
+                <button id="resetDynamicsConfigBtn" class="btn-secondary">Reset Configuration</button>
+                <button id="saveDynamicsConfigBtn" class="btn-primary">Save & Test Connection</button>
             </div>
         </div>
     </div>
@@ -282,18 +287,10 @@
     <!-- Scripts -->
     <script src="../libs/msal-browser.min.js"></script>
     <script src="../js/services/dynamicsService.js" type="module" defer></script>
-    <script src="../js/controllers/displayLeadTransferDynamicsController.js" type="module" defer></script>
-    <script src="../js/controllers/headerController.js" type="module" defer></script>
+    <script src="../js/controllers/dynamicsConfigController.js" type="module" defer></script>
+    <script src="../js/config/dynamicsConfig.js" type="module" defer></script>
     <script src="../js/controllers/postman-integration.js" type="module" defer></script>
-
-    <script>
-        // Update redirect URI example
-        document.addEventListener('DOMContentLoaded', function() {
-            const redirectExample = document.getElementById('redirect-uri-example');
-            if (redirectExample) {
-                redirectExample.textContent = window.location.origin;
-            }
-        });
-    </script>
+    <script src="../js/controllers/headerController.js" type="module" defer></script>
+    <script src="../js/controllers/displayLeadTransferDynamicsController.js" type="module" defer></script>
 </body>
 </html>

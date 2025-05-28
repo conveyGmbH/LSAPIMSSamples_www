@@ -81,6 +81,7 @@ const entityConfig = {
 function init() {
   loadAppState();
   setupEventListeners();
+  setupDynamicsIntegration();
 
   const eventId = sessionStorage.getItem('selectedEventId');
   if (eventId) {
@@ -171,7 +172,7 @@ async function handleShowAttachmentClick() {
   const leadId = state.selectedRowItem.LeadId;
   
   try {
-    // Option 1: Check if AttachmentIdList is available directly
+    //Check if AttachmentIdList is available directly
     if (state.selectedRowItem.AttachmentIdList && state.selectedRowItem.AttachmentIdList.trim() !== '') {
       sessionStorage.setItem('attachmentSource', 'Lead');
       sessionStorage.setItem('AttachmentIdList', state.selectedRowItem.AttachmentIdList);
@@ -227,19 +228,220 @@ function addTransferButton() {
   }
 }
 
+
+
 function handleTransferClick() {
   if (!state.selectedRowItem) {
     alert('Please select a lead first.');
     return;
   }
   
-  // Store the selected lead data in sessionStorage for the transfer page
+  console.log('🔄 Preparing lead transfer...', state.selectedRowItem);
+  
+  // Store the selected lead data
   sessionStorage.setItem('selectedLeadForTransfer', JSON.stringify(state.selectedRowItem));
   sessionStorage.setItem('transferSource', 'WCE_Lead');
+  sessionStorage.setItem('transferReferrer', window.location.href);
   
-  // Navigate to the transfer page
-  window.location.href = 'displayWceLeadTransferDynamics.html';
+  // Handle attachments properly
+  if (state.selectedRowItem.AttachmentIdList && state.selectedRowItem.AttachmentIdList.trim() !== '') {
+    console.log('📎 Lead has attachments:', state.selectedRowItem.AttachmentIdList);
+    
+    // Store attachment IDs for the transfer page
+    sessionStorage.setItem('selectedLeadAttachmentIds', state.selectedRowItem.AttachmentIdList);
+    
+    // Optionally pre-fetch attachment details for better UX
+    prefetchAttachmentDetails(state.selectedRowItem.AttachmentIdList)
+      .then(() => {
+        console.log('✅ Attachment details pre-fetched successfully');
+        // Navigate to transfer page
+        window.location.href = 'displayWceLeadTransferDynamics.html';
+      })
+      .catch((error) => {
+        console.warn('⚠️ Could not pre-fetch attachment details:', error);
+        // Navigate anyway - the transfer page will handle the fetch
+        window.location.href = 'displayWceLeadTransferDynamics.html';
+      });
+  } else {
+    console.log('ℹ️ Lead has no attachments');
+    // Clear any previous attachment data
+    sessionStorage.removeItem('selectedLeadAttachments');
+    sessionStorage.removeItem('selectedLeadAttachmentIds');
+    
+    // Navigate to transfer page
+    window.location.href = 'displayWceLeadTransferDynamics.html';
+  }
 }
+
+// Pre-fetch attachment details function
+async function prefetchAttachmentDetails(attachmentIdList) {
+  try {
+    console.log('🔄 Pre-fetching attachment details...');
+    
+    const attachmentIds = attachmentIdList.split(',')
+      .map(id => id.trim())
+      .filter(id => id !== '');
+    
+    if (attachmentIds.length === 0) {
+      throw new Error('No valid attachment IDs found');
+    }
+    
+    const attachmentDetails = [];
+    
+    // Fetch details for each attachment
+    for (const attachmentId of attachmentIds) {
+      try {
+        console.log(`📎 Pre-fetching attachment: ${attachmentId}`);
+        
+        const endpoint = `WCE_AttachmentById?Id=%27${encodeURIComponent(attachmentId)}%27&$format=json`;
+        const data = await apiService.request('GET', endpoint);
+        
+        let attachmentData = null;
+        if (data && data.d && data.d.results && data.d.results.length > 0) {
+          attachmentData = data.d.results[0];
+        } else if (data && data.d) {
+          attachmentData = data.d;
+        }
+        
+        if (attachmentData) {
+          const attachment = {
+            id: attachmentId,
+            name: attachmentData.FileName || attachmentData.Name || `Attachment_${attachmentId.substring(0, 8)}`,
+            type: attachmentData.MimeType || attachmentData.ContentType || 'application/octet-stream',
+            size: formatFileSize(attachmentData.FileSize || attachmentData.BodyLength),
+            hasBody: !!(attachmentData.Body),
+            source: 'Pre-fetched'
+          };
+          
+          attachmentDetails.push(attachment);
+          console.log(`✅ Pre-fetched attachment: ${attachment.name}`);
+        }
+        
+      } catch (attachmentError) {
+        console.warn(`⚠️ Could not pre-fetch attachment ${attachmentId}:`, attachmentError);
+        
+        // Add placeholder for failed attachment
+        attachmentDetails.push({
+          id: attachmentId,
+          name: `Attachment_${attachmentId.substring(0, 8)}`,
+          type: 'unknown',
+          size: 'Unknown size',
+          hasBody: false,
+          source: 'Failed-prefetch',
+          error: true
+        });
+      }
+    }
+    
+    // Store pre-fetched attachment details
+    if (attachmentDetails.length > 0) {
+      sessionStorage.setItem('selectedLeadAttachments', JSON.stringify(attachmentDetails));
+      console.log(`✅ Pre-fetched ${attachmentDetails.length} attachment details`);
+    }
+    
+    return attachmentDetails;
+    
+  } catch (error) {
+    console.error('❌ Error pre-fetching attachment details:', error);
+    throw error;
+  }
+}
+
+// UTILITY: Format file size
+function formatFileSize(bytes) {
+  if (!bytes || bytes === 0) return 'Unknown size';
+  
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  const size = (bytes / Math.pow(1024, i)).toFixed(2);
+  
+  return `${size} ${sizes[i]}`;
+}
+
+// UPDATED: Enhanced handleRowClick with better attachment handling
+function handleRowClick(item, row) {
+  const tbody = document.querySelector('tbody');
+  
+  const previouslySelected = tbody.querySelector('tr.selected');
+  if (previouslySelected) {
+    previouslySelected.classList.remove('selected');
+  }
+  
+  if (state.selectedRowItem && state.selectedRowItem.LeadId === item.LeadId) {
+    state.selectedRowItem = null;
+    updateButtonState(false);
+  } else {
+    row.classList.add('selected');
+    state.selectedRowItem = item;
+    updateButtonState(true);
+    
+    // ENHANCED: Better attachment handling when row is selected
+    console.log('📋 Lead selected:', item.LeadId, 'Attachments:', item.AttachmentIdList);
+    
+    if (item.AttachmentIdList && item.AttachmentIdList.trim() !== '') {
+      const attachmentIds = item.AttachmentIdList.split(',').filter(id => id.trim() !== '');
+      updateShowAttachmentButton(attachmentIds.length);
+      
+      // Store attachment info immediately for better UX
+      sessionStorage.setItem('AttachmentIdList', item.AttachmentIdList);
+    } else {
+      updateShowAttachmentButton(0);
+      // Clear attachment data if no attachments
+      sessionStorage.removeItem('AttachmentIdList');
+      sessionStorage.removeItem('selectedLeadAttachments');
+    }
+  }
+}
+
+// Check dynamic status of the selected event
+async function checkDynamicsStatus() {
+  try {
+    // Dynamically import DynamicsService to avoid loading issues
+    const { default: DynamicsService } = await import('../services/dynamicsService.js');
+    const dynamicsService = DynamicsService.getInstance();
+    
+    const status = dynamicsService.getConnectionStatus();
+    updateTransferButtonWithStatus(status);
+  } catch (error) {
+    console.log('Dynamics service not available, using standard transfer button');
+  }
+}
+
+function updateTransferButtonWithStatus(status) {
+  const transferButton = document.getElementById('transferButton');
+  if (!transferButton) return;
+  
+  // Update button text based on Dynamics status
+  if (!status.isConfigured) {
+    transferButton.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+      Setup & Transfer to CRM
+    `;
+  } else if (!status.isConnected) {
+    transferButton.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+        <polyline points="10 17 15 12 10 7"></polyline>
+        <line x1="15" y1="12" x2="3" y2="12"></line>
+      </svg>
+      Connect & Transfer to CRM
+    `;
+  } else {
+    transferButton.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 5v14M19 12l-7 7-7-7" />
+      </svg>
+      Transfer to Dynamics CRM
+    `;
+  }
+}
+
 
 async function fetchLeadData() {
   const eventId = sessionStorage.getItem('selectedEventId');
@@ -788,32 +990,32 @@ function restoreRowSelection(leadId) {
   updateButtonState(rowFound);
 }
 
-function handleRowClick(item, row) {
-  const tbody = document.querySelector('tbody');
+// function handleRowClick(item, row) {
+//   const tbody = document.querySelector('tbody');
   
-  const previouslySelected = tbody.querySelector('tr.selected');
-  if (previouslySelected) {
-    previouslySelected.classList.remove('selected');
-  }
+//   const previouslySelected = tbody.querySelector('tr.selected');
+//   if (previouslySelected) {
+//     previouslySelected.classList.remove('selected');
+//   }
   
-  if (state.selectedRowItem && state.selectedRowItem.LeadId === item.LeadId) {
-    state.selectedRowItem = null;
-    updateButtonState(false);
-  } else {
-    row.classList.add('selected');
-    state.selectedRowItem = item;
-    updateButtonState(true);
+//   if (state.selectedRowItem && state.selectedRowItem.LeadId === item.LeadId) {
+//     state.selectedRowItem = null;
+//     updateButtonState(false);
+//   } else {
+//     row.classList.add('selected');
+//     state.selectedRowItem = item;
+//     updateButtonState(true);
     
-    // Update the Show Attachment button with the attachment count when a row is selected
-    if (item.AttachmentIdList) {
-      sessionStorage.setItem('AttachmentIdList', item.AttachmentIdList);
-      const attachmentIds = item.AttachmentIdList.split(',').filter(id => id.trim() !== '');
-      updateShowAttachmentButton(attachmentIds.length);
-    } else {
-      updateShowAttachmentButton(0);
-    }
-  }
-}
+//     // Update the Show Attachment button with the attachment count when a row is selected
+//     if (item.AttachmentIdList) {
+//       sessionStorage.setItem('AttachmentIdList', item.AttachmentIdList);
+//       const attachmentIds = item.AttachmentIdList.split(',').filter(id => id.trim() !== '');
+//       updateShowAttachmentButton(attachmentIds.length);
+//     } else {
+//       updateShowAttachmentButton(0);
+//     }
+//   }
+// }
 
 function updateButtonState(enabled) {
   const showAttachmentButton = document.getElementById('showAttachmentButton');
@@ -829,7 +1031,20 @@ function updateButtonState(enabled) {
   const transferButton = document.getElementById('transferButton');
   if (transferButton) {
     transferButton.disabled = !enabled;
+    
+    // Check Dynamics status when a lead is selected
+    if (enabled) {
+      checkDynamicsStatus();
+    }
   }
+}
+
+function setupDynamicsIntegration() {
+  // Check Dynamics status on page load
+  checkDynamicsStatus();
+  
+  // Optionally, periodically check status
+  setInterval(checkDynamicsStatus, 30000); // Every 30 seconds
 }
 
 function initSearch() {
