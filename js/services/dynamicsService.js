@@ -1,14 +1,10 @@
-/**
- * Microsoft Dynamics 365 Service - ENHANCED VERSION
- * Avec persistance d'authentification et session management
- */
 
-// Configuration pour Dynamics 365
+// Configuration for Dynamics 365
 const DynamicsConfig = {
   SCOPES: ['user.read', 'https://dynamics.crm.dynamics.com/user_impersonation'],
   STORAGE_KEYS: {
     CLIENT_ID: 'dynamics_client_id',
-    TENANT_ID: 'dynamics_tenant_id', 
+    TENANT_ID: 'dynamics_tenant_id',
     RESOURCE_URL: 'dynamics_resource_url'
   },
   API_VERSION: '9.2'
@@ -18,18 +14,18 @@ class DynamicsService {
   constructor() {
     this.msalInstance = null;
     this.config = {
-      clientId: '',
-      tenantId: '',
-      resourceUrl: ''
+      clientId: "",
+      tenantId: "",
+      resourceUrl: "",
     };
     this.isConnected = false;
     this.currentUser = null;
     this.accessToken = null;
-    
-    this.loadConfiguration();
+
+    this.loadConfiguration(); // Loads configuration from localStorage on instantiation
   }
 
-  // Singleton pattern
+  // Singleton pattern for DynamicsService
   static getInstance() {
     if (!DynamicsService.instance) {
       DynamicsService.instance = new DynamicsService();
@@ -37,116 +33,155 @@ class DynamicsService {
     return DynamicsService.instance;
   }
 
-  // Load configuration from localStorage
+  // Loads configuration from localStorage
   loadConfiguration() {
     try {
       this.config = {
-        clientId: localStorage.getItem(DynamicsConfig.STORAGE_KEYS.CLIENT_ID) || '',
-        tenantId: localStorage.getItem(DynamicsConfig.STORAGE_KEYS.TENANT_ID) || '',
-        resourceUrl: localStorage.getItem(DynamicsConfig.STORAGE_KEYS.RESOURCE_URL) || ''
+        clientId:
+          localStorage.getItem(DynamicsConfig.STORAGE_KEYS.CLIENT_ID) || "",
+        tenantId:
+          localStorage.getItem(DynamicsConfig.STORAGE_KEYS.TENANT_ID) || "",
+        resourceUrl:
+          localStorage.getItem(DynamicsConfig.STORAGE_KEYS.RESOURCE_URL) || "",
       };
-      
-      console.log('✅ Configuration loaded:', {
-        clientId: this.config.clientId ? '***configured***' : 'empty',
-        tenantId: this.config.tenantId ? '***configured***' : 'empty',
-        resourceUrl: this.config.resourceUrl || 'empty'
+      console.log("Configuration loaded:", {
+        clientId: this.config.clientId ? "***configured***" : "empty",
+        tenantId: this.config.tenantId ? "***configured***" : "empty",
+        resourceUrl: this.config.resourceUrl || "empty",
       });
-      
     } catch (error) {
-      console.error('❌ Error loading configuration:', error);
+      console.error("Error loading configuration:", error);
     }
   }
 
-  // Get current configuration
+  // Returns the current configuration
   getConfiguration() {
     return { ...this.config };
   }
 
-  // Save configuration
+  // Saves configuration to localStorage
   saveConfiguration(config) {
     try {
-      // Validation
       if (!config.clientId?.trim()) {
-        return { success: false, message: 'Client ID is required' };
+        return {
+          success: false,
+          message: "Client ID is required",
+        };
       }
       if (!config.tenantId?.trim()) {
-        return { success: false, message: 'Tenant ID is required' };
+        return {
+          success: false,
+          message: "Tenant ID is required",
+        };
       }
       if (!config.resourceUrl?.trim()) {
-        return { success: false, message: 'Resource URL is required' };
+        return {
+          success: false,
+          message: "Resource URL is required",
+        };
       }
 
-      // URL validation
       try {
         new URL(config.resourceUrl);
       } catch {
-        return { success: false, message: 'Invalid Resource URL format' };
+        return {
+          success: false,
+          message: "Invalid Resource URL format",
+        };
       }
 
-      // Save to localStorage
-      localStorage.setItem(DynamicsConfig.STORAGE_KEYS.CLIENT_ID, config.clientId.trim());
-      localStorage.setItem(DynamicsConfig.STORAGE_KEYS.TENANT_ID, config.tenantId.trim());
-      localStorage.setItem(DynamicsConfig.STORAGE_KEYS.RESOURCE_URL, config.resourceUrl.trim());
+      localStorage.setItem(
+        DynamicsConfig.STORAGE_KEYS.CLIENT_ID,
+        config.clientId.trim()
+      );
+      localStorage.setItem(
+        DynamicsConfig.STORAGE_KEYS.TENANT_ID,
+        config.tenantId.trim()
+      );
+      localStorage.setItem(
+        DynamicsConfig.STORAGE_KEYS.RESOURCE_URL,
+        config.resourceUrl.trim()
+      );
 
-      // Update local config
       this.config = {
         clientId: config.clientId.trim(),
         tenantId: config.tenantId.trim(),
-        resourceUrl: config.resourceUrl.trim()
+        resourceUrl: config.resourceUrl.trim(),
       };
 
-      // Reset connection state since config changed
+      // Resets connection state as configuration has changed
       this.isConnected = false;
       this.currentUser = null;
       this.accessToken = null;
       this.msalInstance = null;
 
-      console.log('✅ Configuration saved successfully');
-      return { success: true, message: 'Configuration saved successfully' };
-
+      console.log("Configuration saved successfully");
+      return {
+        success: true,
+        message: "Configuration saved successfully",
+      };
     } catch (error) {
-      console.error('❌ Error saving configuration:', error);
-      return { success: false, message: `Error saving configuration: ${error.message}` };
+      console.error("Error saving configuration:", error);
+      return {
+        success: false,
+        message: `Error saving configuration: ${error.message}`,
+      };
     }
   }
 
-  // Clear configuration method
+  // Clears configuration from localStorage
   clearConfiguration() {
     try {
-      Object.values(DynamicsConfig.STORAGE_KEYS).forEach(key => {
+      Object.values(DynamicsConfig.STORAGE_KEYS).forEach((key) => {
         localStorage.removeItem(key);
       });
-      
-      this.config = { clientId: '', tenantId: '', resourceUrl: '' };
+
+      this.config = {
+        clientId: "",
+        tenantId: "",
+        resourceUrl: "",
+      };
       this.msalInstance = null;
       this.isConnected = false;
       this.currentUser = null;
       this.accessToken = null;
-      
-      console.log('✅ Configuration cleared');
-      return { success: true, message: 'Configuration cleared successfully' };
+
+      console.log("Configuration cleared");
+      return {
+        success: true,
+        message: "Configuration cleared successfully",
+      };
     } catch (error) {
-      console.error('❌ Error clearing configuration:', error);
-      return { success: false, message: 'Failed to clear configuration' };
+      console.error("Error clearing configuration:", error);
+      return {
+        success: false,
+        message: "Failed to clear configuration",
+      };
     }
   }
 
-  // Get connection status
+  // Provides the current connection status
   getConnectionStatus() {
-    const isConfigured = !!(this.config.clientId && this.config.tenantId && this.config.resourceUrl);
-    
+    const isConfigured = !!(
+      this.config.clientId &&
+      this.config.tenantId &&
+      this.config.resourceUrl
+    );
+
     return {
       isConfigured,
       isConnected: this.isConnected,
       currentUser: this.currentUser,
-      hasValidToken: !!this.accessToken
+      hasValidToken: !!this.accessToken,
     };
   }
 
-  // Initialize MSAL instance
+  // Initializes the MSAL (Microsoft Authentication Library) instance
   initializeMsal() {
     if (!this.config.clientId || !this.config.tenantId) {
-      throw new Error('Configuration required: clientId and tenantId must be set');
+      throw new Error(
+        "Configuration required: clientId and tenantId must be set"
+      );
     }
 
     if (this.msalInstance) {
@@ -159,152 +194,157 @@ class DynamicsService {
           clientId: this.config.clientId,
           authority: `https://login.microsoftonline.com/${this.config.tenantId}`,
           redirectUri: window.location.origin,
-          navigateToLoginRequestUrl: false
+          navigateToLoginRequestUrl: false,
         },
         cache: {
-          cacheLocation: "localStorage",
-          storeAuthStateInCookie: false
+          cacheLocation: "sessionStorage", 
+          storeAuthStateInCookie: false,
         },
         telemetry: {
           application: {
             appName: "LeadSuccess-DynamicsIntegration",
-            appVersion: "1.0.0"
-          }
-        }
+            appVersion: "1.0.0",
+          },
+        },
       };
 
       this.msalInstance = new msal.PublicClientApplication(msalConfig);
-      console.log('✅ MSAL instance initialized');
-      
-      return this.msalInstance;
+      console.log("MSAL instance initialized with session isolation");
 
+      return this.msalInstance;
     } catch (error) {
-      console.error('❌ Error initializing MSAL:', error);
+      console.error("Error initializing MSAL:", error);
       throw new Error(`Failed to initialize authentication: ${error.message}`);
     }
   }
 
-  // NOUVELLE MÉTHODE: Check existing authentication session
+  // Checks for an existing authentication session
   async checkExistingSession() {
     try {
-      console.log('🔍 Checking for existing authentication session...');
+      console.log("Checking for existing authentication session...");
 
-      if (!this.config.clientId || !this.config.tenantId || !this.config.resourceUrl) {
-        console.log('ℹ️ Configuration incomplete, skipping session check');
-        return { success: false, message: 'Configuration incomplete' };
+      if (
+        !this.config.clientId ||
+        !this.config.tenantId ||
+        !this.config.resourceUrl
+      ) {
+        console.log("Configuration incomplete, skipping session check");
+        return {
+          success: false,
+          message: "Configuration incomplete",
+        };
       }
 
-      // Initialize MSAL if not already done
       const msalInstance = this.initializeMsal();
       await msalInstance.initialize();
 
       const accounts = msalInstance.getAllAccounts();
-      
+
       if (accounts.length === 0) {
-        console.log('ℹ️ No existing accounts found');
-        return { success: false, message: 'No existing accounts' };
+        console.log("No existing accounts found");
+        return {
+          success: false,
+          message: "No existing accounts",
+        };
       }
 
-      console.log('🔍 Found existing account, attempting silent token acquisition...');
+      console.log(
+        "Found existing account, attempting silent token acquisition..."
+      );
 
-      // Try to get token silently
       const silentRequest = {
         scopes: [`${this.config.resourceUrl}/user_impersonation`],
-        account: accounts[0]
+        account: accounts[0],
       };
 
       const result = await msalInstance.acquireTokenSilent(silentRequest);
-      
-      // If successful, restore session
+
+      // Restores session upon successful silent token acquisition
       this.accessToken = result.accessToken;
       this.currentUser = {
         name: result.account.name,
         username: result.account.username,
-        id: result.account.homeAccountId
+        id: result.account.homeAccountId,
       };
       this.isConnected = true;
 
-      console.log('✅ Session restored successfully');
-      console.log('👤 User:', this.currentUser);
+      console.log("Session restored successfully");
+      console.log("User:", this.currentUser);
 
       return {
         success: true,
-        message: 'Session restored successfully',
-        user: this.currentUser
+        message: "Session restored successfully",
+        user: this.currentUser,
       };
-
     } catch (error) {
-      console.log('ℹ️ Could not restore session:', error.message);
-      
-      // Reset connection state
+      console.log("Could not restore session:", error.message);
+
+      // Resets connection state on session restoration failure
       this.isConnected = false;
       this.currentUser = null;
       this.accessToken = null;
-      
-      return { success: false, message: error.message };
+
+      return {
+        success: false,
+        message: error.message,
+      };
     }
   }
 
-  // Connect to Dynamics 365
+  // Connects to Dynamics 365, attempting silent login first, then interactive
   async connect() {
     try {
-      console.log('🔗 Starting Dynamics 365 connection...');
+      console.log("Starting Dynamics 365 connection...");
 
-      // Initialize MSAL
       const msalInstance = this.initializeMsal();
       await msalInstance.initialize();
 
-      // Configure login request
       const loginRequest = {
         scopes: [`${this.config.resourceUrl}/user_impersonation`],
-        prompt: 'select_account'
+        prompt: "select_account",
       };
 
-      console.log('🔐 Attempting login with scopes:', loginRequest.scopes);
+      console.log("Attempting login with scopes:", loginRequest.scopes);
 
-      // Attempt silent login first
       let result;
       try {
         const accounts = msalInstance.getAllAccounts();
         if (accounts.length > 0) {
           const silentRequest = {
             ...loginRequest,
-            account: accounts[0]
+            account: accounts[0],
           };
           result = await msalInstance.acquireTokenSilent(silentRequest);
-          console.log('✅ Silent login successful');
+          console.log("Silent login successful");
         }
       } catch (silentError) {
-        console.log('ℹ️ Silent login failed, trying interactive login');
+        console.log("Silent login failed, trying interactive login");
       }
 
-      // If silent login failed, try interactive login
       if (!result) {
         result = await msalInstance.acquireTokenPopup(loginRequest);
-        console.log('✅ Interactive login successful');
+        console.log("Interactive login successful");
       }
 
-      // Store authentication data
       this.accessToken = result.accessToken;
       this.currentUser = {
         name: result.account.name,
         username: result.account.username,
-        id: result.account.homeAccountId
+        id: result.account.homeAccountId,
       };
       this.isConnected = true;
 
-      console.log('✅ Successfully connected to Dynamics 365');
-      console.log('👤 User:', this.currentUser);
+      console.log("Successfully connected to Dynamics 365");
+      console.log("User:", this.currentUser);
 
       return {
         success: true,
-        message: 'Successfully connected to Dynamics 365',
-        user: this.currentUser
+        message: "Successfully connected to Dynamics 365",
+        user: this.currentUser,
       };
-
     } catch (error) {
-      console.error('❌ Connection error:', error);
-      
+      console.error("Connection error:", error);
+
       this.isConnected = false;
       this.currentUser = null;
       this.accessToken = null;
@@ -313,97 +353,101 @@ class DynamicsService {
     }
   }
 
-  // Enhanced disconnect method
+  // Disconnects from Dynamics 365 and clears authentication data
   async disconnect() {
     try {
-      console.log('🔌 Starting disconnect process...');
+      console.log("Starting disconnect process...");
 
-      // Clear MSAL cache if instance exists
       if (this.msalInstance) {
         try {
           const accounts = this.msalInstance.getAllAccounts();
-          
-          // Remove all accounts
-          for (const account of accounts) {
-            await this.msalInstance.getTokenCache().removeAccount(account);
+
+          if (accounts.length > 0) {
+            try {
+              await this.msalInstance.logoutPopup({
+                account: accounts[0],
+                mainWindowRedirectUri: window.location.origin,
+              });
+            } catch (logoutError) {
+              await this.msalInstance.clearCache();
+            }
+          } else {
+            await this.msalInstance.clearCache();
           }
-          
-          // Clear all tokens
-          await this.msalInstance.clearCache();
-          console.log('✅ MSAL cache cleared');
-          
         } catch (msalError) {
-          console.warn('⚠️ Error clearing MSAL cache:', msalError);
+          console.warn("Error during MSAL cleanup:", msalError);
+          try {
+            await this.msalInstance.clearCache();
+            console.log("Fallback: MSAL cache cleared");
+          } catch (fallbackError) {
+            console.warn("Even fallback cache clear failed:", fallbackError);
+          }
         }
       }
 
-      // Reset instance variables
       this.msalInstance = null;
       this.isConnected = false;
       this.currentUser = null;
       this.accessToken = null;
 
-      console.log('✅ Successfully disconnected from Dynamics 365');
-      
+      console.log("Successfully disconnected from Dynamics 365");
+
       return {
         success: true,
-        message: 'Successfully disconnected from Dynamics 365'
+        message: "Successfully disconnected from Dynamics 365",
       };
-
     } catch (error) {
-      console.error('❌ Disconnect error:', error);
-      
-      // Force reset even if there was an error
+      console.error("Disconnect error:", error);
+
       this.msalInstance = null;
       this.isConnected = false;
       this.currentUser = null;
       this.accessToken = null;
-      
+
       return {
-        success: false,
-        message: `Disconnect error: ${error.message}`
+        success: true,
+        message: "Disconnected (with forced cleanup due to error)",
       };
     }
   }
 
-  // Get fresh access token
+  // Retrieves a fresh access token silently
   async getAccessToken() {
     if (!this.msalInstance || !this.isConnected) {
-      throw new Error('Not connected to Dynamics 365');
+      throw new Error("Not connected to Dynamics 365");
     }
 
     try {
       const accounts = this.msalInstance.getAllAccounts();
       if (accounts.length === 0) {
-        throw new Error('No accounts found');
+        throw new Error("No accounts found");
       }
 
       const silentRequest = {
         scopes: [`${this.config.resourceUrl}/user_impersonation`],
-        account: accounts[0]
+        account: accounts[0],
       };
 
       const result = await this.msalInstance.acquireTokenSilent(silentRequest);
       this.accessToken = result.accessToken;
-      
-      return this.accessToken;
 
+      return this.accessToken;
     } catch (error) {
-      console.error('❌ Error getting access token:', error);
-      
-      // If token refresh fails, user needs to re-authenticate
+      console.error("Error getting access token:", error);
+
+      // Resets connection state if token refresh fails
       this.isConnected = false;
       this.currentUser = null;
       this.accessToken = null;
-      
-      throw new Error('Token expired. Please re-authenticate.');
+
+      throw new Error("Token expired. Please re-authenticate.");
     }
   }
 
-  // Make API call to Dynamics 365
-  async makeApiCall(endpoint, method = 'GET', data = null) {
+  // Makes an API call to Dynamics 365
+  async makeApiCall(endpoint, method = "GET", data = null) {
     if (!this.isConnected) {
-      throw new Error('Not connected to Dynamics 365');
+      throw new Error("Not connected to Dynamics 365");
     }
 
     try {
@@ -411,301 +455,291 @@ class DynamicsService {
       const url = `${this.config.resourceUrl}/api/data/v${DynamicsConfig.API_VERSION}/${endpoint}`;
 
       const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'OData-MaxVersion': '4.0',
-        'OData-Version': '4.0'
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "OData-MaxVersion": "4.0",
+        "OData-Version": "4.0",
       };
 
       const requestOptions = {
         method,
-        headers
+        headers,
       };
 
-      if (data && (method === 'POST' || method === 'PATCH' || method === 'PUT')) {
+      if (
+        data &&
+        (method === "POST" || method === "PATCH" || method === "PUT")
+      ) {
         requestOptions.body = JSON.stringify(data);
       }
 
-      console.log(`📡 Making API call: ${method} ${url}`);
+      console.log(`Making API call: ${method} ${url}`);
 
       const response = await fetch(url, requestOptions);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ API call failed:', response.status, errorText);
-        throw new Error(`API call failed: ${response.status} ${response.statusText}`);
+        console.error("API call failed:", response.status, errorText);
+        throw new Error(
+          `API call failed: ${response.status} ${response.statusText}`
+        );
       }
 
       const result = response.status === 204 ? {} : await response.json();
-      console.log('✅ API call successful');
-      
-      return result;
+      console.log("API call successful");
 
+      return result;
     } catch (error) {
-      console.error('❌ API call error:', error);
+      console.error("API call error:", error);
       throw error;
     }
   }
 
-  // Transfer lead to Dynamics 365 (enhanced with attachments info)
+  // Transfers lead data to Dynamics 365, including attachments info
   async transferLead(leadData, attachments = []) {
     if (!this.isConnected) {
-      throw new Error('Not connected to Dynamics 365');
+      throw new Error("Not connected to Dynamics 365");
     }
 
     try {
-      console.log('📤 Starting lead transfer...', leadData);
-      console.log('📎 Attachments to transfer:', attachments);
+      console.log("Starting lead transfer...", leadData);
+      console.log("Attachments to transfer:", attachments);
 
-      // Map lead data to Dynamics format
       const dynamicsLead = this.mapLeadToDynamics(leadData);
-      
-      console.log('🔄 Mapped lead data:', dynamicsLead);
 
-      // Create lead in Dynamics
-      const result = await this.makeApiCall('leads', 'POST', dynamicsLead);
-      
-      const leadId = result.leadid || 'unknown';
+      console.log("Mapped lead data:", dynamicsLead);
+
+      const result = await this.makeApiCall("leads", "POST", dynamicsLead);
+
+      const leadId = result.leadid || "unknown";
       const leadUrl = `${this.config.resourceUrl}/main.aspx?etc=4&id=${leadId}&pagetype=entityrecord`;
 
-      // TODO: Handle attachments transfer here if needed
       if (attachments.length > 0) {
-        console.log(`📎 ${attachments.length} attachments will be transferred separately`);
-        // Implementation for attachment transfer would go here
+        console.log(
+          `${attachments.length} attachments will be transferred separately`
+        );
       }
 
-      console.log('✅ Lead transferred successfully:', leadId);
+      console.log("Lead transferred successfully:", leadId);
 
       return {
         success: true,
         leadId: leadId,
         dynamicsUrl: leadUrl,
-        message: 'Lead transferred successfully to Dynamics 365',
-        attachmentsCount: attachments.length
+        message: "Lead transferred successfully to Dynamics 365",
+        attachmentsCount: attachments.length,
       };
-
     } catch (error) {
-      console.error('❌ Lead transfer error:', error);
+      console.error("Lead transfer error:", error);
       throw new Error(`Failed to transfer lead: ${error.message}`);
     }
   }
 
-  // Map lead data from WCE format to Dynamics format
- // Map lead data from WCE format to Dynamics format - VERSION AVEC VALIDATION
-mapLeadToDynamics(leadData) {
-  // Helper function to get property with multiple possible names
-  const getProperty = (possibleNames) => {
-    for (const name of possibleNames) {
-      if (leadData.hasOwnProperty(name) && leadData[name] != null) {
-        return leadData[name];
+  // Maps lead data from a generic format to Dynamics 365 format with validation
+  mapLeadToDynamics(leadData) {
+    const getProperty = (possibleNames) => {
+      for (const name of possibleNames) {
+        if (leadData.hasOwnProperty(name) && leadData[name] != null) {
+          return leadData[name];
+        }
       }
-    }
-    return null;
-  };
+      return null;
+    };
 
-  // Helper function to truncate text to specific length
-  const truncateText = (text, maxLength) => {
-    if (!text) return null;
-    const str = String(text).trim();
-    if (str.length <= maxLength) return str;
-    return str.substring(0, maxLength - 3) + '...';
-  };
+    const truncateText = (text, maxLength) => {
+      if (!text) return null;
+      const str = String(text).trim();
+      if (str.length <= maxLength) return str;
+      return str.substring(0, maxLength - 3) + "...";
+    };
 
-  // Helper function to validate and format phone numbers
-  const formatPhone = (phone, maxLength = 20) => {
-    if (!phone) return null;
-    
-    // Remove non-numeric characters except +, -, (, ), and spaces
-    let cleanPhone = String(phone).replace(/[^\d\+\-\(\)\s]/g, '');
-    
-    // Truncate if too long
-    if (cleanPhone.length > maxLength) {
-      cleanPhone = cleanPhone.substring(0, maxLength);
-    }
-    
-    return cleanPhone.trim() || null;
-  };
+    const formatPhone = (phone, maxLength = 20) => {
+      if (!phone) return null;
+      let cleanPhone = String(phone).replace(/[^\d\+\-\(\)\s]/g, "");
+      if (cleanPhone.length > maxLength) {
+        cleanPhone = cleanPhone.substring(0, maxLength);
+      }
+      return cleanPhone.trim() || null;
+    };
 
-  // Helper function to validate email
-  const validateEmail = (email) => {
-    if (!email) return null;
-    const emailStr = String(email).trim();
-    
-    // Basic email validation and length check (max 100 chars for Dynamics)
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (emailRegex.test(emailStr) && emailStr.length <= 100) {
-      return emailStr;
-    }
-    
-    // If invalid but contains @, try to truncate
-    if (emailStr.includes('@') && emailStr.length > 100) {
-      return emailStr.substring(0, 100);
-    }
-    
-    return null;
-  };
+    const validateEmail = (email) => {
+      if (!email) return null;
+      const emailStr = String(email).trim();
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (emailRegex.test(emailStr) && emailStr.length <= 100) {
+        return emailStr;
+      }
+      if (emailStr.includes("@") && emailStr.length > 100) {
+        return emailStr.substring(0, 100);
+      }
+      return null;
+    };
 
-  // Helper function to validate URL
-  const validateUrl = (url) => {
-    if (!url) return null;
-    let urlStr = String(url).trim();
-    
-    // Add protocol if missing
-    if (urlStr && !urlStr.startsWith('http://') && !urlStr.startsWith('https://')) {
-      urlStr = 'https://' + urlStr;
-    }
-    
-    // Truncate if too long (max 200 chars for Dynamics)
-    if (urlStr.length > 200) {
-      urlStr = urlStr.substring(0, 200);
-    }
-    
-    return urlStr;
-  };
+    const validateUrl = (url) => {
+      if (!url) return null;
+      let urlStr = String(url).trim();
+      if (
+        urlStr &&
+        !urlStr.startsWith("http://") &&
+        !urlStr.startsWith("https://")
+      ) {
+        urlStr = "https://" + urlStr;
+      }
+      if (urlStr.length > 200) {
+        urlStr = urlStr.substring(0, 200);
+      }
+      return urlStr;
+    };
 
-  const mappedLead = {
-    // Basic information - Subject max 300 chars
-    subject: truncateText(
-      getProperty(['Topic', 'topic', 'Subject', 'subject']) || 'Lead from LeadSuccess',
-      300
-    ),
-    
-    // Contact information - Name fields max 50 chars each
-    firstname: truncateText(
-      getProperty(['FirstName', 'firstName', 'first_name']),
-      50
-    ),
-    lastname: truncateText(
-      getProperty(['LastName', 'lastName', 'last_name']),
-      50
-    ),
-    
-    // Company name - max 100 chars
-    companyname: truncateText(
-      getProperty(['CompanyName', 'companyName', 'company', 'Company']),
-      100
-    ),
-    
-    // Email - validated
-    emailaddress1: validateEmail(
-      getProperty(['EMailAddress1', 'emailAddress1', 'email', 'Email'])
-    ),
-    
-    // Phone numbers - max 20 chars each
-    telephone1: formatPhone(
-      getProperty(['Address1_Telephone1', 'telephone1', 'phone', 'Phone']),
-      20
-    ),
-    mobilephone: formatPhone(
-      getProperty(['MobilePhone', 'mobilePhone', 'mobile', 'Mobile']),
-      20
-    ),
-    
-    // Job information - max 100 chars
-    jobtitle: truncateText(
-      getProperty(['JobTitle', 'jobTitle', 'title', 'Title']),
-      100
-    ),
-    
-    // Address information
-    address1_line1: truncateText(
-      getProperty(['Address1_Line1', 'address1_Line1', 'address', 'Address']),
-      250
-    ),
-    address1_city: truncateText(
-      getProperty(['Address1_City', 'address1_City', 'city', 'City']),
-      80
-    ),
-    address1_postalcode: truncateText(
-      getProperty(['Address1_PostalCode', 'address1_PostalCode', 'postalCode', 'zipCode']),
-      20
-    ),
-    address1_country: truncateText(
-      getProperty(['Address1_Country', 'address1_Country', 'country', 'Country']),
-      80
-    ),
-    address1_stateorprovince: truncateText(
-      getProperty(['Address1_StateOrProvince', 'address1_StateOrProvince', 'state', 'State']),
-      50
-    ),
-    
-    // Website URL - validated
-    websiteurl: validateUrl(
-      getProperty(['WebSiteUrl', 'webSiteUrl', 'website', 'Website'])
-    ),
-    
-    // Description - max 2000 chars
-    description: truncateText(
-      getProperty(['Description', 'description', 'notes', 'Notes']),
-      2000
-    ),
-    
-    // Lead source - FIXED: use valid value (1-10)
-    leadsourcecode: 3, // Web (valid range: 1-10)
-    
-    // Priority and status
-    prioritycode: 1, // Normal priority
-    statuscode: 1, // New
-    statecode: 0 // Open
-  };
+    const mappedLead = {
+      subject: truncateText(
+        getProperty(["Topic", "topic", "Subject", "subject"]) ||
+          "Lead from LeadSuccess",
+        300
+      ),
+      firstname: truncateText(
+        getProperty(["FirstName", "firstName", "first_name"]),
+        50
+      ),
+      lastname: truncateText(
+        getProperty(["LastName", "lastName", "last_name"]),
+        50
+      ),
+      companyname: truncateText(
+        getProperty(["CompanyName", "companyName", "company", "Company"]),
+        100
+      ),
+      emailaddress1: validateEmail(
+        getProperty(["EMailAddress1", "emailAddress1", "email", "Email"])
+      ),
+      telephone1: formatPhone(
+        getProperty(["Address1_Telephone1", "telephone1", "phone", "Phone"]),
+        20
+      ),
+      mobilephone: formatPhone(
+        getProperty(["MobilePhone", "mobilePhone", "mobile", "Mobile"]),
+        20
+      ),
+      jobtitle: truncateText(
+        getProperty(["JobTitle", "jobTitle", "title", "Title"]),
+        100
+      ),
+      address1_line1: truncateText(
+        getProperty(["Address1_Line1", "address1_Line1", "address", "Address"]),
+        250
+      ),
+      address1_city: truncateText(
+        getProperty(["Address1_City", "address1_City", "city", "City"]),
+        80
+      ),
+      address1_postalcode: truncateText(
+        getProperty([
+          "Address1_PostalCode",
+          "address1_PostalCode",
+          "postalCode",
+          "zipCode",
+        ]),
+        20
+      ),
+      address1_country: truncateText(
+        getProperty([
+          "Address1_Country",
+          "address1_Country",
+          "country",
+          "Country",
+        ]),
+        80
+      ),
+      address1_stateorprovince: truncateText(
+        getProperty([
+          "Address1_StateOrProvince",
+          "address1_StateOrProvince",
+          "state",
+          "State",
+        ]),
+        50
+      ),
+      websiteurl: validateUrl(
+        getProperty(["WebSiteUrl", "webSiteUrl", "website", "Website"])
+      ),
+      description: truncateText(
+        getProperty(["Description", "description", "notes", "Notes"]),
+        2000
+      ),
+      leadsourcecode: 3, // Web
+      prioritycode: 1, // Normal priority
+      statuscode: 1, // New
+      statecode: 0, // Open
+    };
 
-  // Remove null/undefined values
-  Object.keys(mappedLead).forEach(key => {
-    if (mappedLead[key] === null || mappedLead[key] === undefined || mappedLead[key] === '') {
-      delete mappedLead[key];
-    }
-  });
+    // Removes null, undefined, or empty string values from the mapped lead data
+    Object.keys(mappedLead).forEach((key) => {
+      if (
+        mappedLead[key] === null ||
+        mappedLead[key] === undefined ||
+        mappedLead[key] === ""
+      ) {
+        delete mappedLead[key];
+      }
+    });
 
-  // Log validation info
-  console.log('🔄 Mapped and validated lead data:', mappedLead);
-  
-  // Log any truncated fields for debugging
-  const originalValues = {
-    subject: getProperty(['Topic', 'topic', 'Subject', 'subject']),
-    firstname: getProperty(['FirstName', 'firstName', 'first_name']),
-    lastname: getProperty(['LastName', 'lastName', 'last_name']),
-    mobilephone: getProperty(['MobilePhone', 'mobilePhone', 'mobile', 'Mobile']),
-    telephone1: getProperty(['Address1_Telephone1', 'telephone1', 'phone', 'Phone'])
-  };
-  
-  Object.keys(originalValues).forEach(key => {
-    if (originalValues[key] && mappedLead[key] && 
-        String(originalValues[key]).length > String(mappedLead[key]).length) {
-      console.warn(`⚠️ Field '${key}' truncated from '${originalValues[key]}' to '${mappedLead[key]}'`);
-    }
-  });
+    console.log("Mapped and validated lead data:", mappedLead);
 
-  return mappedLead;
-}
-  // Test connection to Dynamics 365
+    // Logs any truncated fields for debugging
+    const originalValues = {
+      subject: getProperty(["Topic", "topic", "Subject", "subject"]),
+      firstname: getProperty(["FirstName", "firstName", "first_name"]),
+      lastname: getProperty(["LastName", "lastName", "last_name"]),
+      mobilephone: getProperty([
+        "MobilePhone",
+        "mobilePhone",
+        "mobile",
+        "Mobile",
+      ]),
+      telephone1: getProperty([
+        "Address1_Telephone1",
+        "telephone1",
+        "phone",
+        "Phone",
+      ]),
+    };
+
+    Object.keys(originalValues).forEach((key) => {
+      if (
+        originalValues[key] &&
+        mappedLead[key] &&
+        String(originalValues[key]).length > String(mappedLead[key]).length
+      ) {
+        console.warn(
+          `Field '${key}' truncated from '${originalValues[key]}' to '${mappedLead[key]}'`
+        );
+      }
+    });
+
+    return mappedLead;
+  }
+
+  // Tests the connection to Dynamics 365 by making a simple API call
   async testConnection() {
     try {
-      console.log('🧪 Testing Dynamics 365 connection...');
-      
-      const result = await this.makeApiCall('leads?$top=1');
-      
-      console.log('✅ Connection test successful');
+      console.log("Testing Dynamics 365 connection...");
+
+      await this.makeApiCall("leads?$top=1");
+
+      console.log("Connection test successful");
       return {
         success: true,
-        message: 'Connection to Dynamics 365 is working properly'
+        message: "Connection to Dynamics 365 is working properly",
       };
-
     } catch (error) {
-      console.error('❌ Connection test failed:', error);
+      console.error("Connection test failed:", error);
       return {
         success: false,
-        message: `Connection test failed: ${error.message}`
+        message: `Connection test failed: ${error.message}`,
       };
     }
   }
 }
-
-
-
-
-
-
-
 
 export default DynamicsService;

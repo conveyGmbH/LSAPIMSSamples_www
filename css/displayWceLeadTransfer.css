@@ -335,6 +335,11 @@ body {
   background: var(--dynamics-blue);
   color: var(--white);
   border: 2px solid var(--dynamics-blue);
+  border-color: #007bff;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
 }
 
 .btn-primary:hover {
@@ -361,6 +366,10 @@ body {
   background: var(--text-muted);
   color: var(--white);
   border: 2px solid var(--text-muted);
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
 }
 
 .btn-secondary:hover {
@@ -695,39 +704,53 @@ body {
 }
 
 .transfer-btn:disabled {
-  background: var(--text-muted);
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
+  background: #6c757d !important; 
+  color: #adb5bd !important;
+  cursor: not-allowed !important;
+  opacity: 0.65 !important;
+  transform: none !important;
+  box-shadow: none !important;
+  border: 2px solid #6c757d !important; 
+  
 }
 
-.btn-content {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
 
-.btn-spinner {
+
+.loading-modal {
   display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  backdrop-filter: blur(2px);
 }
 
-.transfer-btn.loading .btn-spinner {
-  display: block;
+.loading-content {
+  background: var(--white);
+  margin: 15% auto;
+  padding: 30px;
+  border-radius: 8px;
+  width: 300px;
+  text-align: center;
 }
 
-.transfer-btn.loading .btn-icon {
-  display: none;
-}
-
-.spinner-small {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top: 2px solid var(--white);
+.loading .spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #0078d4;
   border-radius: 50%;
+  width: 40px;
+  height: 40px;
   animation: spin 1s linear infinite;
+  margin: 0 auto 10px;
 }
 
+.loading {
+  text-align: center;
+  padding: 20px;
+}
 /* ========================================
    TRANSFER RESULTS
 ======================================== */
@@ -777,7 +800,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 20px;
+  padding: 10px;
   background: #d4edda;
   border-radius: 6px;
   border-left: 4px solid var(--success-color);
@@ -1580,3 +1603,5 @@ body {
     background: white;
   }
 }
+
+

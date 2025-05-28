@@ -912,65 +912,42 @@ ${JSON.stringify(this.selectedLead, null, 2)}
     }
   }
 
+
   async handleTransfer() {
-    if (!this.selectedLead) {
-      this.showError('No lead selected for transfer');
-      return;
-    }
-
-    const status = this.dynamicsService.getConnectionStatus();
-
-    if (!status.isConfigured) {
-      this.showError('Please configure Dynamics 365 connection first');
-      this.openConfigModal();
-      return;
-    }
-
-    if (!status.isConnected) {
-      this.showError('Please authenticate with Dynamics 365 first');
-      return;
-    }
-
-    if (this.isTransferring) return;
-
-    try {
-      this.isTransferring = true;
-      this.updateUI();
-      this.updateTransferButton();
-      this.showTransferProgress('Preparing lead transfer...');
-
-      const result = await this.dynamicsService.transferLead(this.selectedLead, this.leadAttachments);
-
-      if (result.success) {
-        this.showTransferSuccess(result);
-        this.saveRecentTransfer(result);
-      }
-
-    } catch (error) {
-      console.error('Transfer error:', error);
-      this.showError(`Transfer failed: ${error.message}`);
-      this.hideTransferResults();
-    } finally {
-      this.isTransferring = false;
-      this.updateUI();
-      this.updateTransferButton();
-    }
+  if (!this.selectedLead) {
+    this.showError('No lead selected for transfer');
+    return;
   }
 
-  showTransferProgress(message) {
-    const resultsDiv = document.getElementById('transferResults');
-    const statusDiv = document.getElementById('transferStatus');
-    
-    if (resultsDiv && statusDiv) {
-      resultsDiv.style.display = 'block';
-      statusDiv.innerHTML = `
-        <div class="transfer-progress">
-          <div class="spinner"></div>
-          <div class="progress-text">${message}</div>
-        </div>
-      `;
-    }
+  const status = this.dynamicsService.getConnectionStatus();
+
+  if (!status.isConfigured || !status.isConnected) {
+    this.showError('Please authenticate with Dynamics 365 first');
+    return;
   }
+
+  if (this.isTransferring) return;
+
+  try {
+    this.isTransferring = true;
+    this.showLoading('Sending lead to Dynamics 365...');
+
+    const result = await this.dynamicsService.transferLead(this.selectedLead, this.leadAttachments);
+
+    if (result.success) {
+      this.hideLoading();
+      this.showTransferSuccess(result);
+      this.saveRecentTransfer(result);
+    }
+
+  } catch (error) {
+    console.error('Transfer error:', error);
+    this.hideLoading();
+    this.showError(`Transfer failed: ${error.message}`);
+  } finally {
+    this.isTransferring = false;
+  }
+}
 
   showTransferSuccess(result) {
     const resultsDiv = document.getElementById('transferResults');
@@ -1132,32 +1109,101 @@ ${JSON.stringify(this.selectedLead, null, 2)}
     }
   }
 
-  updateTransferButton() {
-    const status = this.dynamicsService.getConnectionStatus();
-    const transferBtn = document.getElementById('transferToDynamicsBtn');
-    if (!transferBtn) return;
+  // updateTransferButton() {
+  //   const status = this.dynamicsService.getConnectionStatus();
+  //   const transferBtn = document.getElementById('transferToDynamicsBtn');
+  //   if (!transferBtn) return;
     
-    const btnText = transferBtn.querySelector('.btn-text');
+  //   const btnText = transferBtn.querySelector('.btn-text');
     
-    if (this.isTransferring) {
-      transferBtn.classList.add('loading');
-      transferBtn.disabled = true;
-      if (btnText) btnText.textContent = 'Transferring...';
-    } else {
-      transferBtn.classList.remove('loading');
+  //   if (this.isTransferring) {
+  //     transferBtn.classList.add('loading');
+  //     transferBtn.disabled = true;
+  //     if (btnText) btnText.textContent = 'Transferring...';
+  //   } else {
+  //     transferBtn.classList.remove('loading');
       
-      if (!status.isConfigured) {
-        if (btnText) btnText.textContent = 'Configure Dynamics CRM First';
-        transferBtn.disabled = true;
-      } else if (!status.isConnected) {
-        if (btnText) btnText.textContent = 'Authenticate & Transfer to Dynamics CRM';
-        transferBtn.disabled = false;
-      } else {
-        if (btnText) btnText.textContent = 'Transfer to Dynamics CRM';
-        transferBtn.disabled = false;
-      }
-    }
+  //     if (!status.isConfigured) {
+  //       if (btnText) btnText.textContent = 'Configure Dynamics CRM First';
+  //       transferBtn.disabled = true;
+  //     } else if (!status.isConnected) {
+  //       if (btnText) btnText.textContent = 'Authenticate & Transfer to Dynamics CRM';
+  //       transferBtn.disabled = false;
+  //     } else {
+  //       if (btnText) btnText.textContent = 'Transfer to Dynamics CRM';
+  //       transferBtn.disabled = false;
+  //     }
+  //   }
+  // }
+
+  // Ajouter ces fonctions de loading
+
+updateTransferButton() {
+  const status = this.dynamicsService.getConnectionStatus();
+  const transferBtn = document.getElementById('transferToDynamicsBtn');
+  if (!transferBtn) return;
+  
+  const btnText = transferBtn.querySelector('.btn-text');
+  
+  if (status.isConnected && status.isConfigured) {
+    transferBtn.disabled = false;
+    transferBtn.removeAttribute('disabled'); 
+    if (btnText) btnText.textContent = 'Transfer to Dynamics CRM';
+  } else {
+    transferBtn.disabled = true;
+    transferBtn.setAttribute('disabled', 'disabled');
+    if (btnText) btnText.textContent = 'Authentication Required';
   }
+}
+
+
+  showLoading(text) {
+  let loadingModal = document.getElementById('loadingModal');
+  if (!loadingModal) {
+    loadingModal = document.createElement('div');
+    loadingModal.id = 'loadingModal';
+    loadingModal.className = 'loading-modal';
+    loadingModal.innerHTML = `
+      <div class="loading-content">
+        <div class="loading">
+          <div class="spinner"></div>
+          <div id="loadingText">${text}</div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(loadingModal);
+  }
+  
+  const loadingText = document.getElementById('loadingText');
+  if (loadingText) loadingText.textContent = text;
+  loadingModal.style.display = 'block';
+}
+
+hideLoading() {
+  const loadingModal = document.getElementById('loadingModal');
+  if (loadingModal) {
+    loadingModal.style.display = 'none';
+  }
+}
+
+updateTransferButton() {
+  const status = this.dynamicsService.getConnectionStatus();
+  const transferBtn = document.getElementById('transferToDynamicsBtn');
+  if (!transferBtn) return;
+  
+  const btnText = transferBtn.querySelector('.btn-text');
+  
+  if (status.isConnected && status.isConfigured) {
+    transferBtn.disabled = false;
+    if (btnText) btnText.textContent = 'Transfer to Dynamics CRM';
+  } else {
+    transferBtn.disabled = true;
+    if (btnText) btnText.textContent = 'Authentication Required';
+  }
+}
+
+
+
 
   updateConfigButton(status) {
     const configBtn = document.getElementById('dynamicsConfigButton');
