@@ -1,5 +1,6 @@
 import DynamicsService from '../services/dynamicsService.js';
 import { formatDate } from '../utils/helper.js';
+import ApiService from '../services/apiService.js';
 
 class DisplayLeadTransferDynamicsController {
   constructor() {
@@ -9,13 +10,11 @@ class DisplayLeadTransferDynamicsController {
     this.isTransferring = false;
     this.isAuthenticating = false;
     this.recentTransfers = [];
-    
+
     this.initializeController();
   }
 
   async initializeController() {
-    console.log('🚀 Initializing Lead Transfer Controller...');
-    
     try {
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => this.setupController());
@@ -23,7 +22,7 @@ class DisplayLeadTransferDynamicsController {
         await this.setupController();
       }
     } catch (error) {
-      console.error('❌ Error initializing controller:', error);
+      console.error('Error initializing controller:', error);
     }
   }
 
@@ -34,51 +33,41 @@ class DisplayLeadTransferDynamicsController {
     this.displayLeadData();
     await this.checkExistingAuthentication();
     this.updateUI();
-    
-    console.log('✅ Lead Transfer Controller initialized');
   }
 
   async checkExistingAuthentication() {
     try {
-      console.log('🔍 Checking existing authentication...');
-      
       const status = this.dynamicsService.getConnectionStatus();
-      
+
       if (status.isConfigured && !status.isConnected) {
         const restored = await this.dynamicsService.checkExistingSession();
         if (restored.success) {
-          console.log('✅ Session restored automatically');
           this.updateStatusCard();
         }
       }
-      
     } catch (error) {
-      console.log('ℹ️ No existing session found:', error.message);
+      console.log('No existing session found:', error.message);
     }
   }
 
   loadSelectedLead() {
     try {
       const leadData = sessionStorage.getItem('selectedLeadForTransfer');
-      console.log('📋 Raw lead data from sessionStorage:', leadData);
       
       if (leadData) {
         this.selectedLead = JSON.parse(leadData);
         this.loadLeadAttachments();
         
         if (!this.selectedLead || typeof this.selectedLead !== 'object') {
-          console.warn('❌ Invalid lead data structure');
           this.selectedLead = null;
           this.showError('Invalid lead data structure. Please go back and select a lead again.');
           return;
         }
-        
       } else {
-        console.warn('❌ No selected lead found in sessionStorage');
         this.showError('No lead selected for transfer. Please go back and select a lead.');
       }
     } catch (error) {
-      console.error('❌ Error loading selected lead:', error);
+      console.error('Error loading selected lead:', error);
       this.selectedLead = null;
       this.showError('Error loading lead data. Please try again.');
     }
@@ -115,55 +104,44 @@ class DisplayLeadTransferDynamicsController {
 
   loadLeadAttachments() {
     try {
-      console.log('🔍 Loading lead attachments...');
-      
+      // Check for pre-fetched attachments first
       const attachmentsData = sessionStorage.getItem('selectedLeadAttachments');
       if (attachmentsData) {
         this.leadAttachments = JSON.parse(attachmentsData);
-        console.log('📎 Lead attachments loaded from sessionStorage:', this.leadAttachments);
         return;
       }
 
       const attachmentIdList = this.selectedLead?.AttachmentIdList;
       
       if (attachmentIdList && attachmentIdList.trim() !== '') {
-        console.log('📋 Found AttachmentIdList:', attachmentIdList);
-        
         const attachmentIds = attachmentIdList.split(',')
           .map(id => id.trim())
           .filter(id => id !== '');
         
         if (attachmentIds.length > 0) {
-          console.log(`📎 Found ${attachmentIds.length} attachment IDs`);
-          
           this.fetchAttachmentDetails(attachmentIds)
             .then(() => {
               this.displayLeadAttachments();
             })
             .catch(error => {
-              console.error('❌ Error fetching attachment details:', error);
+              console.warn('Could not fetch attachment details:', error);
               this.createMockAttachments(attachmentIds);
               this.displayLeadAttachments();
             });
-          
           return;
         }
       }
 
+      // Try to extract attachments from lead data
       this.extractAttachmentsFromLead();
-      
     } catch (error) {
-      console.error('❌ Error loading attachments:', error);
+      console.error('Error loading attachments:', error);
       this.leadAttachments = [];
     }
   }
 
   async fetchAttachmentDetails(attachmentIds) {
     try {
-      console.log('🔄 Fetching attachment details from API...');
-      
-      const { default: ApiService } = await import('../services/apiService.js');
-      
       const serverName = sessionStorage.getItem('serverName');
       const apiName = sessionStorage.getItem('apiName');
       
@@ -176,8 +154,6 @@ class DisplayLeadTransferDynamicsController {
       
       for (const attachmentId of attachmentIds) {
         try {
-          console.log(`📎 Fetching details for attachment: ${attachmentId}`);
-          
           const endpoint = `WCE_AttachmentById?Id=%27${encodeURIComponent(attachmentId)}%27&$format=json`;
           const data = await apiService.request('GET', endpoint);
           
@@ -199,11 +175,9 @@ class DisplayLeadTransferDynamicsController {
             };
             
             attachmentDetails.push(attachment);
-            console.log(`✅ Loaded attachment: ${attachment.name}`);
           }
-          
         } catch (attachmentError) {
-          console.warn(`⚠️ Could not fetch attachment ${attachmentId}:`, attachmentError);
+          console.warn(`Could not fetch attachment ${attachmentId}:`, attachmentError);
           
           attachmentDetails.push({
             id: attachmentId,
@@ -218,19 +192,14 @@ class DisplayLeadTransferDynamicsController {
       }
       
       this.leadAttachments = attachmentDetails;
-      console.log(`✅ Successfully loaded ${attachmentDetails.length} attachments`);
-      
       sessionStorage.setItem('selectedLeadAttachments', JSON.stringify(attachmentDetails));
-      
     } catch (error) {
-      console.error('❌ Error fetching attachment details:', error);
+      console.error('Error fetching attachment details:', error);
       throw error;
     }
   }
 
   createMockAttachments(attachmentIds) {
-    console.log('🔄 Creating mock attachments for display...');
-    
     this.leadAttachments = attachmentIds.map((id, index) => ({
       id: id,
       name: `Attachment_${index + 1}_${id.substring(0, 8)}`,
@@ -239,31 +208,23 @@ class DisplayLeadTransferDynamicsController {
       hasBody: false,
       source: 'Mock'
     }));
-    
-    console.log(`📎 Created ${this.leadAttachments.length} mock attachments`);
   }
 
   displayLeadAttachments() {
-    console.log('🖼️ Displaying lead attachments...');
-    
     const attachmentsContainer = document.getElementById('leadAttachments');
     const attachmentsList = document.getElementById('attachmentsList');
     const attachmentsCount = document.getElementById('attachmentsCount');
     
     if (!attachmentsContainer || !attachmentsList || !attachmentsCount) {
-      console.error('❌ Attachment container elements not found in DOM');
+      console.error('Attachment container elements not found in DOM');
       return;
     }
-    
-    console.log(`📎 Processing ${this.leadAttachments.length} attachments`);
 
     if (this.leadAttachments.length > 0) {
       attachmentsContainer.style.display = 'block';
       
       let attachmentsHtml = '';
       this.leadAttachments.forEach((attachment, index) => {
-        console.log(`📎 Processing attachment ${index + 1}:`, attachment);
-        
         const fileExtension = this.getFileExtension(attachment.name);
         const iconText = fileExtension.substring(0, 3).toUpperCase();
         
@@ -286,11 +247,8 @@ class DisplayLeadTransferDynamicsController {
 
       attachmentsList.innerHTML = attachmentsHtml;
       attachmentsCount.textContent = `${this.leadAttachments.length} file(s) will be transferred with this lead`;
-      
-      console.log('✅ Attachments displayed successfully');
     } else {
       attachmentsContainer.style.display = 'none';
-      console.log('ℹ️ No attachments to display');
     }
   }
 
@@ -328,8 +286,7 @@ class DisplayLeadTransferDynamicsController {
       return;
     }
 
-    console.log('🔍 Searching for attachments in lead data...');
-
+    // Look for attachment fields in lead data
     const attachmentFields = [
       'attachments', 'Attachments', 'files', 'Files',
       'documents', 'Documents', 'assets', 'Assets',
@@ -339,11 +296,11 @@ class DisplayLeadTransferDynamicsController {
     for (const field of attachmentFields) {
       if (this.selectedLead[field] && Array.isArray(this.selectedLead[field])) {
         this.leadAttachments = this.selectedLead[field];
-        console.log(`📎 Found attachments in field '${field}':`, this.leadAttachments);
         return;
       }
     }
 
+    // Look for file-like properties
     const fileProperties = [];
     Object.keys(this.selectedLead).forEach(key => {
       const value = this.selectedLead[key];
@@ -371,19 +328,19 @@ class DisplayLeadTransferDynamicsController {
 
     if (fileProperties.length > 0) {
       this.leadAttachments = fileProperties;
-      console.log('📎 Found file properties:', this.leadAttachments);
       return;
     }
 
+    // Check for WCE attachments
     if (this.selectedLead.WceAttachments || this.selectedLead.wceAttachments) {
       const wceAttachments = this.selectedLead.WceAttachments || this.selectedLead.wceAttachments;
       if (Array.isArray(wceAttachments)) {
         this.leadAttachments = wceAttachments;
-        console.log('📎 Found WCE attachments:', this.leadAttachments);
         return;
       }
     }
 
+    // Look for URL fields
     const urlFields = Object.keys(this.selectedLead).filter(key => 
       key.toLowerCase().includes('url') || 
       key.toLowerCase().includes('link') || 
@@ -407,14 +364,10 @@ class DisplayLeadTransferDynamicsController {
 
       if (urlAttachments.length > 0) {
         this.leadAttachments = urlAttachments;
-        console.log('📎 Found URL attachments:', this.leadAttachments);
         return;
       }
     }
 
-    console.log('⚠️ No attachments found. Available properties in lead:');
-    console.log('🔍 Lead properties:', Object.keys(this.selectedLead));
-    
     this.leadAttachments = [];
   }
 
@@ -467,10 +420,9 @@ class DisplayLeadTransferDynamicsController {
       const transfersData = localStorage.getItem('dynamics_recent_transfers');
       if (transfersData) {
         this.recentTransfers = JSON.parse(transfersData);
-        console.log('📊 Recent transfers loaded:', this.recentTransfers.length);
       }
     } catch (error) {
-      console.error('❌ Error loading recent transfers:', error);
+      console.error('Error loading recent transfers:', error);
       this.recentTransfers = [];
     }
   }
@@ -494,9 +446,8 @@ class DisplayLeadTransferDynamicsController {
 
       localStorage.setItem('dynamics_recent_transfers', JSON.stringify(this.recentTransfers));
       this.displayRecentTransfers();
-      
     } catch (error) {
-      console.error('❌ Error saving recent transfer:', error);
+      console.error('Error saving recent transfer:', error);
     }
   }
 
@@ -574,16 +525,14 @@ class DisplayLeadTransferDynamicsController {
   displayLeadData() {
     const leadDataContainer = document.getElementById('leadData');
     if (!leadDataContainer) {
-      console.error('❌ Lead data container not found');
+      console.error('Lead data container not found');
       return;
     }
 
     if (!this.selectedLead) {
-      leadDataContainer.innerHTML = '<div class="no-data">❌ No lead data available</div>';
+      leadDataContainer.innerHTML = '<div class="no-data">No lead data available</div>';
       return;
     }
-
-    console.log('📋 Displaying lead data:', this.selectedLead);
 
     const leadHtml = this.buildLeadDataHTML();
     leadDataContainer.innerHTML = leadHtml;
@@ -595,13 +544,10 @@ class DisplayLeadTransferDynamicsController {
     return filename.split('.').pop() || 'file';
   }
 
-  // Enhanced method to build lead data HTML showing ALL fields dynamically
   buildLeadDataHTML() {
     if (!this.selectedLead) {
       return '<div class="no-data">No lead data available</div>';
     }
-
-    console.log('🔨 Building HTML for lead:', this.selectedLead);
 
     // Lead header info
     const leadId = this.getLeadProperty(['LeadId', 'leadId', 'id', 'Id']) || 'N/A';
@@ -618,7 +564,7 @@ class DisplayLeadTransferDynamicsController {
       </div>
     `;
 
-    // Field display names mapping for better presentation
+    // Field display names mapping
     const fieldDisplayNames = {
       'KontaktViewId': 'Kontakt View ID',
       'LeadId': 'Lead ID',
@@ -662,13 +608,8 @@ class DisplayLeadTransferDynamicsController {
       'DepartmentText': 'Department Text'
     };
 
-    // Date fields that need special formatting
     const dateFields = ['CreatedOn', 'ModifiedOn', 'ModifiedBySystemOn'];
-
-    // Fields to exclude from display
     const excludeFields = ['__metadata'];
-
-    // Fields that should be displayed full-width
     const fullWidthFields = ['Description', 'AttachmentIdList', 'StatusMessage'];
 
     // Get all available fields from the lead data
@@ -682,7 +623,7 @@ class DisplayLeadTransferDynamicsController {
     let fieldsHtml = '<div class="lead-fields-grid">';
     let fieldsDisplayed = 0;
 
-    // Sort fields to show important ones first
+    // Sort fields with priority fields first
     const priorityFields = ['LeadId', 'FirstName', 'LastName', 'CompanyName', 'EMailAddress1', 'Address1_Telephone1', 'MobilePhone', 'Topic'];
     const sortedFields = [
       ...priorityFields.filter(field => allFields.includes(field)),
@@ -723,7 +664,7 @@ class DisplayLeadTransferDynamicsController {
 
     // If no fields displayed, show debug info
     if (fieldsDisplayed === 0) {
-      console.log('⚠️ No fields displayed, showing raw data for debugging');
+      console.warn('No fields displayed, showing raw data for debugging');
       fieldsHtml += `
         <div class="debug-info">
           <h4>Debug: Raw Lead Data</h4>
@@ -805,7 +746,6 @@ ${JSON.stringify(this.selectedLead, null, 2)}
       } else {
         this.showConfigStatus(result.message, 'error');
       }
-
     } catch (error) {
       console.error('Error saving configuration:', error);
       this.showConfigStatus(`Failed to save: ${error.message}`, 'error');
@@ -857,7 +797,6 @@ ${JSON.stringify(this.selectedLead, null, 2)}
         this.updateStatusCard();
         this.showSuccess('Successfully authenticated with Dynamics 365!');
       }
-
     } catch (error) {
       console.error('Authentication error:', error);
       this.showError(`Authentication failed: ${error.message}`);
@@ -870,8 +809,6 @@ ${JSON.stringify(this.selectedLead, null, 2)}
 
   async handleDisconnect() {
     try {
-      console.log('🔌 Starting disconnect process...');
-      
       if (!this.dynamicsService) {
         throw new Error('DynamicsService is not available');
       }
@@ -881,18 +818,15 @@ ${JSON.stringify(this.selectedLead, null, 2)}
       }
 
       const result = await this.dynamicsService.disconnect();
-      console.log('✅ Disconnect result:', result);
       
       this.updateUI();
       this.updateStatusCard();
       this.showSuccess('Disconnected from Dynamics 365');
-      
     } catch (error) {
-      console.error('❌ Disconnect error:', error);
+      console.error('Disconnect error:', error);
       
       try {
-        console.log('🔄 Attempting manual disconnect fallback...');
-        
+        // Fallback cleanup
         if (this.dynamicsService.msalInstance) {
           await this.dynamicsService.msalInstance.clearCache();
         }
@@ -904,50 +838,47 @@ ${JSON.stringify(this.selectedLead, null, 2)}
         this.updateUI();
         this.updateStatusCard();
         this.showSuccess('Disconnected from Dynamics 365 (manual cleanup)');
-        
       } catch (fallbackError) {
-        console.error('❌ Manual disconnect fallback failed:', fallbackError);
+        console.error('Manual disconnect fallback failed:', fallbackError);
         this.showError('Error during disconnect. Please refresh the page.');
       }
     }
   }
 
-
   async handleTransfer() {
-  if (!this.selectedLead) {
-    this.showError('No lead selected for transfer');
-    return;
-  }
-
-  const status = this.dynamicsService.getConnectionStatus();
-
-  if (!status.isConfigured || !status.isConnected) {
-    this.showError('Please authenticate with Dynamics 365 first');
-    return;
-  }
-
-  if (this.isTransferring) return;
-
-  try {
-    this.isTransferring = true;
-    this.showLoading('Sending lead to Dynamics 365...');
-
-    const result = await this.dynamicsService.transferLead(this.selectedLead, this.leadAttachments);
-
-    if (result.success) {
-      this.hideLoading();
-      this.showTransferSuccess(result);
-      this.saveRecentTransfer(result);
+    if (!this.selectedLead) {
+      this.showError('No lead selected for transfer');
+      return;
     }
 
-  } catch (error) {
-    console.error('Transfer error:', error);
-    this.hideLoading();
-    this.showError(`Transfer failed: ${error.message}`);
-  } finally {
-    this.isTransferring = false;
+    const status = this.dynamicsService.getConnectionStatus();
+
+    if (!status.isConfigured || !status.isConnected) {
+      this.showError('Please authenticate with Dynamics 365 first');
+      return;
+    }
+
+    if (this.isTransferring) return;
+
+    try {
+      this.isTransferring = true;
+      this.showLoading('Sending lead to Dynamics 365...');
+
+      const result = await this.dynamicsService.transferLead(this.selectedLead, this.leadAttachments);
+
+      if (result.success) {
+        this.hideLoading();
+        this.showTransferSuccess(result);
+        this.saveRecentTransfer(result);
+      }
+    } catch (error) {
+      console.error('Transfer error:', error);
+      this.hideLoading();
+      this.showError(`Transfer failed: ${error.message}`);
+    } finally {
+      this.isTransferring = false;
+    }
   }
-}
 
   showTransferSuccess(result) {
     const resultsDiv = document.getElementById('transferResults');
@@ -1039,7 +970,7 @@ ${JSON.stringify(this.selectedLead, null, 2)}
     const disconnectButton = document.getElementById('disconnectButton');
 
     if (!connectionText) {
-      console.error('❌ connectionText element not found');
+      console.error('connectionText element not found');
       return;
     }
 
@@ -1052,7 +983,6 @@ ${JSON.stringify(this.selectedLead, null, 2)}
       if (userInfo) userInfo.style.display = 'none';
       if (connectButton) connectButton.style.display = 'none';
       if (disconnectButton) disconnectButton.style.display = 'none';
-      
     } else if (status.isConnected && status.currentUser) {
       connectionText.textContent = 'Connected to Dynamics 365';
       connectionText.classList.add('status-connected');
@@ -1070,7 +1000,6 @@ ${JSON.stringify(this.selectedLead, null, 2)}
       
       if (connectButton) connectButton.style.display = 'none';
       if (disconnectButton) disconnectButton.style.display = 'block';
-      
     } else if (status.isConfigured) {
       connectionText.textContent = 'Ready to connect to Dynamics 365';
       connectionText.classList.add('status-disconnected');
@@ -1078,7 +1007,6 @@ ${JSON.stringify(this.selectedLead, null, 2)}
       if (userInfo) userInfo.style.display = 'none';
       if (connectButton) connectButton.style.display = 'block';
       if (disconnectButton) disconnectButton.style.display = 'none';
-      
     } else {
       connectionText.textContent = 'Not configured for Dynamics 365';
       connectionText.classList.add('status-disconnected');
@@ -1087,13 +1015,6 @@ ${JSON.stringify(this.selectedLead, null, 2)}
       if (connectButton) connectButton.style.display = 'none';
       if (disconnectButton) disconnectButton.style.display = 'none';
     }
-
-    console.log('✅ Status card updated:', {
-      isConnected: status.isConnected,
-      isConfigured: status.isConfigured,
-      isAuthenticating: this.isAuthenticating,
-      currentUser: status.currentUser
-    });
   }
 
   updateConfigurationNotices(status) {
@@ -1109,101 +1030,52 @@ ${JSON.stringify(this.selectedLead, null, 2)}
     }
   }
 
-  // updateTransferButton() {
-  //   const status = this.dynamicsService.getConnectionStatus();
-  //   const transferBtn = document.getElementById('transferToDynamicsBtn');
-  //   if (!transferBtn) return;
+  updateTransferButton() {
+    const status = this.dynamicsService.getConnectionStatus();
+    const transferBtn = document.getElementById('transferToDynamicsBtn');
+    if (!transferBtn) return;
     
-  //   const btnText = transferBtn.querySelector('.btn-text');
+    const btnText = transferBtn.querySelector('.btn-text');
     
-  //   if (this.isTransferring) {
-  //     transferBtn.classList.add('loading');
-  //     transferBtn.disabled = true;
-  //     if (btnText) btnText.textContent = 'Transferring...';
-  //   } else {
-  //     transferBtn.classList.remove('loading');
-      
-  //     if (!status.isConfigured) {
-  //       if (btnText) btnText.textContent = 'Configure Dynamics CRM First';
-  //       transferBtn.disabled = true;
-  //     } else if (!status.isConnected) {
-  //       if (btnText) btnText.textContent = 'Authenticate & Transfer to Dynamics CRM';
-  //       transferBtn.disabled = false;
-  //     } else {
-  //       if (btnText) btnText.textContent = 'Transfer to Dynamics CRM';
-  //       transferBtn.disabled = false;
-  //     }
-  //   }
-  // }
-
-  // Ajouter ces fonctions de loading
-
-updateTransferButton() {
-  const status = this.dynamicsService.getConnectionStatus();
-  const transferBtn = document.getElementById('transferToDynamicsBtn');
-  if (!transferBtn) return;
-  
-  const btnText = transferBtn.querySelector('.btn-text');
-  
-  if (status.isConnected && status.isConfigured) {
-    transferBtn.disabled = false;
-    transferBtn.removeAttribute('disabled'); 
-    if (btnText) btnText.textContent = 'Transfer to Dynamics CRM';
-  } else {
-    transferBtn.disabled = true;
-    transferBtn.setAttribute('disabled', 'disabled');
-    if (btnText) btnText.textContent = 'Authentication Required';
+    if (status.isConnected && status.isConfigured) {
+      transferBtn.disabled = false;
+      transferBtn.removeAttribute('disabled'); 
+      if (btnText) btnText.textContent = 'Transfer to Dynamics CRM';
+    } else {
+      transferBtn.disabled = true;
+      transferBtn.setAttribute('disabled', 'disabled');
+      if (btnText) btnText.textContent = 'Authentication Required';
+    }
   }
-}
-
 
   showLoading(text) {
-  let loadingModal = document.getElementById('loadingModal');
-  if (!loadingModal) {
-    loadingModal = document.createElement('div');
-    loadingModal.id = 'loadingModal';
-    loadingModal.className = 'loading-modal';
-    loadingModal.innerHTML = `
-      <div class="loading-content">
-        <div class="loading">
-          <div class="spinner"></div>
-          <div id="loadingText">${text}</div>
+    let loadingModal = document.getElementById('loadingModal');
+    if (!loadingModal) {
+      loadingModal = document.createElement('div');
+      loadingModal.id = 'loadingModal';
+      loadingModal.className = 'loading-modal';
+      loadingModal.innerHTML = `
+        <div class="loading-content">
+          <div class="loading">
+            <div class="spinner"></div>
+            <div id="loadingText">${text}</div>
+          </div>
         </div>
-      </div>
-    `;
-    document.body.appendChild(loadingModal);
+      `;
+      document.body.appendChild(loadingModal);
+    }
+    
+    const loadingText = document.getElementById('loadingText');
+    if (loadingText) loadingText.textContent = text;
+    loadingModal.style.display = 'block';
   }
-  
-  const loadingText = document.getElementById('loadingText');
-  if (loadingText) loadingText.textContent = text;
-  loadingModal.style.display = 'block';
-}
 
-hideLoading() {
-  const loadingModal = document.getElementById('loadingModal');
-  if (loadingModal) {
-    loadingModal.style.display = 'none';
+  hideLoading() {
+    const loadingModal = document.getElementById('loadingModal');
+    if (loadingModal) {
+      loadingModal.style.display = 'none';
+    }
   }
-}
-
-updateTransferButton() {
-  const status = this.dynamicsService.getConnectionStatus();
-  const transferBtn = document.getElementById('transferToDynamicsBtn');
-  if (!transferBtn) return;
-  
-  const btnText = transferBtn.querySelector('.btn-text');
-  
-  if (status.isConnected && status.isConfigured) {
-    transferBtn.disabled = false;
-    if (btnText) btnText.textContent = 'Transfer to Dynamics CRM';
-  } else {
-    transferBtn.disabled = true;
-    if (btnText) btnText.textContent = 'Authentication Required';
-  }
-}
-
-
-
 
   updateConfigButton(status) {
     const configBtn = document.getElementById('dynamicsConfigButton');

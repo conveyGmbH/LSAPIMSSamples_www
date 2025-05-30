@@ -1,11 +1,5 @@
-// Import avec vérification
 import dynamicsConfig from '../config/dynamicsConfig.js';
 
-// Vérification immédiate de l'import
-console.log('DynamicsConfig imported:', dynamicsConfig);
-if (!dynamicsConfig) {
-  console.error('CRITICAL: dynamicsConfig is undefined!');
-}
 
 /**
  * Microsoft Dynamics CRM Service
@@ -13,10 +7,9 @@ if (!dynamicsConfig) {
  */
 class DynamicsService {
   constructor() {
-    // Vérification avant utilisation
+    // Verification before use
     if (!dynamicsConfig) {
-      console.error('CRITICAL: dynamicsConfig is not available in constructor');
-      this.apiBaseUrl = 'http://localhost:3000/api'; // Fallback
+      this.apiBaseUrl = 'http://localhost:3000/api'; 
     } else {
       this.apiBaseUrl = dynamicsConfig.apiBaseUrl;
     }
@@ -33,7 +26,7 @@ class DynamicsService {
 
   // Check if client configuration exists and is valid
   hasClientConfig() {
-    // Fallback si dynamicsConfig n'est pas disponible
+    // Fallback if dynamicsConfig is not available
     if (!dynamicsConfig) {
       console.error('dynamicsConfig not available, using fallback');
       const config = this.getClientConfig();
@@ -55,7 +48,6 @@ class DynamicsService {
 
   // Get client configuration from localStorage
   getClientConfig() {
-    // Utilisation des clés directement si dynamicsConfig n'est pas disponible
     const storageKeys = dynamicsConfig?.storageKeys || {
       clientId: 'DYNAMICS_CLIENT_ID',
       clientSecret: 'DYNAMICS_CLIENT_SECRET',
@@ -76,7 +68,6 @@ class DynamicsService {
   // Save client configuration with validation
   async saveClientConfig(config) {
     try {
-      // Validate configuration
       const validation = this.validateClientConfig(config);
       if (!validation.isValid) {
         return {
@@ -85,7 +76,6 @@ class DynamicsService {
         };
       }
 
-      // Store configuration
       localStorage.setItem(dynamicsConfig.storageKeys.clientId, config.clientId);
       localStorage.setItem(dynamicsConfig.storageKeys.clientSecret, config.clientSecret || '');
       localStorage.setItem(dynamicsConfig.storageKeys.tenantId, config.tenantId);
@@ -142,14 +132,12 @@ class DynamicsService {
   // Clear client configuration
   async clearClientConfig() {
     try {
-      // Clear configuration
       localStorage.removeItem(dynamicsConfig.storageKeys.clientId);
       localStorage.removeItem(dynamicsConfig.storageKeys.clientSecret);
       localStorage.removeItem(dynamicsConfig.storageKeys.tenantId);
       localStorage.removeItem(dynamicsConfig.storageKeys.resourceUrl);
       localStorage.removeItem(dynamicsConfig.storageKeys.redirectUri);
 
-      // Also clear authentication data
       this.clearAuthData();
 
       return {
@@ -176,7 +164,6 @@ class DynamicsService {
         };
       }
 
-      // Test by making a simple request to the auth endpoint
       const response = await fetch(`${this.apiBaseUrl}/dynamics/auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -242,7 +229,6 @@ class DynamicsService {
       localStorage.setItem(dynamicsConfig.storageKeys.accessToken, authData.accessToken);
       localStorage.setItem(dynamicsConfig.storageKeys.resourceUrl, authData.resourceUrl);
       
-      // Store additional info if available
       if (authData.refreshToken) {
         localStorage.setItem(dynamicsConfig.storageKeys.refreshToken, authData.refreshToken);
       }
@@ -279,7 +265,6 @@ class DynamicsService {
         throw new Error('Dynamics CRM client configuration missing or invalid. Please configure it first.');
       }
 
-      // Request auth URL from backend
       const response = await fetch(`${this.apiBaseUrl}/dynamics/auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -301,7 +286,6 @@ class DynamicsService {
       
       console.log('Opening Dynamics authentication URL:', authUrl);
 
-      // Open the authorization URL in a popup window
       const authWindow = window.open(
         authUrl, 
         'DynamicsAuth', 
@@ -313,7 +297,6 @@ class DynamicsService {
       }
 
       return new Promise((resolve, reject) => {
-        // Handle timeout (5 minutes)
         const timeout = setTimeout(() => {
           if (!authWindow.closed) {
             authWindow.close();
@@ -321,7 +304,6 @@ class DynamicsService {
           reject(new Error('Authentication timed out. Please try again.'));
         }, 300000);
 
-        // Listen for messages from the popup window
         const messageHandler = (event) => {
           if (event.data && event.data.type === 'dynamics-auth-code') {
             clearTimeout(timeout);
@@ -336,7 +318,6 @@ class DynamicsService {
             if (event.data.error) {
               reject(new Error(`Authentication error: ${event.data.error}`));
             } else if (event.data.code) {
-              // Exchange code for token
               this.exchangeCodeForToken(event.data.code)
                 .then(resolve)
                 .catch(reject);
@@ -348,7 +329,6 @@ class DynamicsService {
 
         window.addEventListener('message', messageHandler);
 
-        // Check if popup was closed manually
         const checkClosed = setInterval(() => {
           if (authWindow.closed) {
             clearInterval(checkClosed);
@@ -391,7 +371,6 @@ class DynamicsService {
 
       const tokenData = await response.json();
       
-      // Store the authentication data
       this.storeAuthData({
         accessToken: tokenData.access_token,
         refreshToken: tokenData.refresh_token,
@@ -414,14 +393,12 @@ class DynamicsService {
         return false;
       }
       
-      // Check if token is expired
       if (dynamicsConfig.helpers.isTokenExpired()) {
         console.log('Token expired, attempting refresh...');
         const refreshed = await this.refreshToken();
         return refreshed;
       }
       
-      // Test token validity by making a simple API call
       const response = await fetch(
         `${this.apiBaseUrl}/dynamics/userinfo?accessToken=${encodeURIComponent(authData.accessToken)}&resourceUrl=${encodeURIComponent(authData.resourceUrl)}`
       );
@@ -466,7 +443,6 @@ class DynamicsService {
 
       const tokenData = await response.json();
       
-      // Store the new authentication data
       this.storeAuthData({
         accessToken: tokenData.access_token,
         refreshToken: tokenData.refresh_token || refreshToken,
@@ -496,7 +472,6 @@ class DynamicsService {
         return { connected: false, message: 'Authentication expired or invalid' };
       }
 
-      // Get user info through the proxy
       try {
         const response = await fetch(
           `${this.apiBaseUrl}/dynamics/userinfo?accessToken=${encodeURIComponent(authData.accessToken)}&resourceUrl=${encodeURIComponent(authData.resourceUrl)}`
@@ -518,7 +493,6 @@ class DynamicsService {
         console.warn('Could not retrieve user info:', infoError);
       }
 
-      // Return basic connection status if user info retrieval fails
       return { connected: true };
     } catch (error) {
       console.error('Connection check error:', error);
@@ -534,7 +508,6 @@ class DynamicsService {
         return { success: true, message: 'Already logged out' };
       }
 
-      // Clear local auth data
       this.clearAuthData();
 
       return { success: true, message: 'Logged out successfully' };
@@ -556,13 +529,11 @@ class DynamicsService {
         throw new Error('Not authenticated with Dynamics CRM');
       }
 
-      // Ensure token is valid
       const isValid = await this.isTokenValid();
       if (!isValid) {
         throw new Error('Authentication expired. Please reconnect to Dynamics CRM.');
       }
 
-      // Use the specialized direct-lead-transfer endpoint for Dynamics
       const response = await fetch(`${this.apiBaseUrl}/dynamics/direct-lead-transfer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -581,7 +552,7 @@ class DynamicsService {
       }
 
       const result = await response.json();
-      return result; // { success, leadId, status, message, attachments: { total, transferred, errors } }
+      return result;
     } catch (error) {
       console.error('Lead transfer error:', error);
       throw error;
