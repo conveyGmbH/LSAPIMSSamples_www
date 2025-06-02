@@ -10,8 +10,8 @@ const credentials = sessionStorage.getItem('credentials');
  * Defines display names for fields, selectable entities, and date fields.
  */
 const entityConfig = {
-  activatingEntities: ['WCE_Event'], // Entities with row selection capabilities
-  defaultEntity: 'WCE_Country',      // Default entity to select on initialization
+  activatingEntities: ['WCE_Event'], 
+  defaultEntity: 'WCE_Country',      
 
   // User-friendly display names for columns
   displayNames: {
@@ -156,9 +156,7 @@ function loadAppState() {
   }
 }
 
-/**
- * Saves current application state to localStorage.
- */
+/* Saves current application state to localStorage. */
 function saveAppState() {
   try {
     localStorage.setItem('columnWidths', JSON.stringify(state.columnWidths));
@@ -386,7 +384,6 @@ async function updateData() {
 
 /**
  * Calculates optimal column widths based on the content of the data.
- * Saves calculated widths to local storage.
  */
 function calculateColumnWidths(data, entity) {
   if (!data || data.length === 0) return;

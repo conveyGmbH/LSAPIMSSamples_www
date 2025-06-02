@@ -1,0 +1,227 @@
+
+// ['WCE_Country', 'WCE_Event', 'WCE_User', 'WCE_Lead'];
+
+
+// WCE_Country
+
+{
+  "d": {
+    "results": [
+      {
+        "__metadata": {
+          "uri": "http://localhost:8091/odata_apims/WCE_Country(240)",
+          "type": "LeadSuccessAPIMSOData.WCE_Country"
+        },
+        "LGNTINITLandVIEWID": 240,
+        "CountryId": "LC",
+        "DisplayName": "Saint Lucia"
+      }
+    ]
+  }
+}
+
+
+// WCE_Event
+
+{
+  "d": {
+    "results": [
+      {
+        "__metadata": {
+          "uri": "http://localhost:8091/odata_apims/WCE_Event(317)",
+          "type": "LeadSuccessAPIMSOData.WCE_Event"
+        },
+        "VeranstaltungViewId": 317,
+        "EventId": "9b1763d8-1c4e-47ce-8903-41b74b0720e9",
+        "DisplayName": "API Test",
+        "CreatedBy": null,
+        "CreatedOn": "/Date(1537353034106)/",
+        "ModifiedBy": "SYSTEM",
+        "ModifiedOn": "/Date(1723646756169)/",
+        "StartDate": "/Date(1546300800000)/",
+        "EndDate": "/Date(1956441600000)/",
+        "Type": "Test Veranstalter LS-TEST",
+        "EventSubtype": "API Test Accounts",
+        "Description": null
+      }
+    ]
+  }
+}
+
+
+// WCE_User
+{
+  "d": {
+    "results": [
+      {
+        "__metadata": {
+          "uri": "http://localhost:8091/odata_apims/WCE_User(1002)",
+          "type": "LeadSuccessAPIMSOData.WCE_User"
+        },
+        "MitarbeiterViewId": 1002,
+        "UserId": "conveyapiapp1",
+        "DisplayName": "convey conveyapiapp1",
+        "CreatedBy": null,
+        "CreatedOn": "/Date(1537952121876)/",
+        "ModifiedBy": "SYSTEM",
+        "ModifiedOn": "/Date(1537952136251)/",
+        "FirstName": "convey",
+        "LastName": "conveyapiapp1",
+        "Email": null,
+        "Phone": null,
+        "MobilePhone": null,
+        "Street": null,
+        "PostalCode": null,
+        "City": null,
+        "Country": null,
+        "CountryISOCode": null,
+        "CurrentStatus": "APP-User",
+        "EventId": "9b1763d8-1c4e-47ce-8903-41b74b0720e9"
+      }
+    ]
+  }
+}
+
+
+
+// WCE_Lead
+{
+  "d": {
+    "results": [
+      {
+        "__metadata": {
+          "uri": "http://localhost:8091/odata_apims/WCE_Lead(1376)",
+          "type": "LeadSuccessAPIMSOData.WCE_Lead"
+        },
+        "KontaktViewId": 1376,
+        "LeadId": "c5722da9-7db5-4ff3-a352-7273e993f179",
+        "CreatedOn": "/Date(1715822433086)/",
+        "ModifiedOn": "/Date(1715822433086)/",
+        "CreatedBy": "conveyapiapp1",
+        "ModifiedBy": "conveyapiapp1",
+        "Salutation": null,
+        "Suffix": null,
+        "FirstName": null,
+        "MiddleName": null,
+        "LastName": null,
+        "CompanyName": null,
+        "JobTitle": null,
+        "Address1_Telephone1": null,
+        "MobilePhone": null,
+        "Address1_Fax": null,
+        "EMailAddress1": null,
+        "WebSiteUrl": null,
+        "Address1_Line1": null,
+        "Address1_PostalCode": null,
+        "Address1_City": null,
+        "Address1_Country": null,
+        "Address1_CountryISOCode": null,
+        "Address1_StateOrProvince": null,
+        "Description": null,
+        "AttachmentIdList": "36f446c4-9ae2-4074-a3f4-49d36641400e",
+        "SalesArea": null,
+        "RequestBarcode": null,
+        "StatusMessage": null,
+        "DeviceId": 1,
+        "DeviceRecordId": 1376,
+        "ModifiedBySystemOn": "/Date(1715822433086)/",
+        "EventId": "9b1763d8-1c4e-47ce-8903-41b74b0720e9",
+        "Gender": "",
+        "Topic": "API Test",
+        "Newsletter": null,
+        "Department": null,
+        "DisplayName": null,
+        "IsReviewed": 0,
+        "DepartmentText": null
+      
+      }
+    ]
+  }
+}
+
+
+
+
+//https://lstest.convey.de/apimstest/WCE_Event?$format=json&$filter=EventId%20eq%20%279b1763d8-1c4e-47ce-8903-41b74b0720e9%27
+{
+  "d": {
+    "results": [
+      {
+        "__metadata": {
+          "uri": "http://localhost:8091/odata_apims/WCE_Event(317)",
+          "type": "LeadSuccessAPIMSOData.WCE_Event"
+        },
+        "VeranstaltungViewId": 317,
+        "EventId": "9b1763d8-1c4e-47ce-8903-41b74b0720e9",
+        "DisplayName": "API Test",
+        "CreatedBy": null,
+        "CreatedOn": "/Date(1537353034106)/",
+        "ModifiedBy": "SYSTEM",
+        "ModifiedOn": "/Date(1723646756169)/",
+        "StartDate": "/Date(1546300800000)/",
+        "EndDate": "/Date(1956441600000)/",
+        "Type": "Test Veranstalter LS-TEST",
+        "EventSubtype": "API Test Accounts",
+        "Description": null
+      }
+    ]
+  }
+}
+
+
+
+
+//https://lstest.convey.de/apimstest/WCE_Lead?$format=json&$filter=EventId eq 'EventId'  
+
+{
+  "d": {
+    "results": [
+      {
+        "__metadata": {
+          "uri": "http://localhost:8091/odata_apims/WCE_Lead(1376)",
+          "type": "LeadSuccessAPIMSOData.WCE_Lead"
+        },
+        "KontaktViewId": 1376,
+        "LeadId": "c5722da9-7db5-4ff3-a352-7273e993f179",
+        "CreatedOn": "/Date(1715822433086)/",
+        "ModifiedOn": "/Date(1715822433086)/",
+        "CreatedBy": "conveyapiapp1",
+        "ModifiedBy": "conveyapiapp1",
+        "Salutation": null,
+        "Suffix": null,
+        "FirstName": null,
+        "MiddleName": null,
+        "LastName": null,
+        "CompanyName": null,
+        "JobTitle": null,
+        "Address1_Telephone1": null,
+        "MobilePhone": null,
+        "Address1_Fax": null,
+        "EMailAddress1": null,
+        "WebSiteUrl": null,
+        "Address1_Line1": null,
+        "Address1_PostalCode": null,
+        "Address1_City": null,
+        "Address1_Country": null,
+        "Address1_CountryISOCode": null,
+        "Address1_StateOrProvince": null,
+        "Description": null,
+        "AttachmentIdList": "36f446c4-9ae2-4074-a3f4-49d36641400e",
+        "SalesArea": null,
+        "RequestBarcode": null,
+        "StatusMessage": null,
+        "DeviceId": 1,
+        "DeviceRecordId": 1376,
+        "ModifiedBySystemOn": "/Date(1715822433086)/",
+        "EventId": "9b1763d8-1c4e-47ce-8903-41b74b0720e9",
+        "Gender": "",
+        "Topic": "API Test",
+        "Newsletter": null,
+        "Department": null,
+        "DisplayName": null,
+        "IsReviewed": 0,
+        "DepartmentText": null
+      },
+       ]
+  }
+}

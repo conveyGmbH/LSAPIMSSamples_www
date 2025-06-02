@@ -1,4 +1,8 @@
-/* Config */
+/* ==========================================================================
+   Import & Configuration
+   ========================================================================== */
+@import url('../css/opensans.css');
+
 :root {
     --primary-color: #d9613f;
     --background-color: rgb(215, 229, 241);
@@ -18,6 +22,9 @@
     --muted-color: #6c757d;
 }
 
+/* ==========================================================================
+   Reset & Base Styles
+   ========================================================================== */
 *,
 *::before,
 *::after {
@@ -28,7 +35,7 @@
 
 body {
     min-height: 100vh;
-    height: 100vh; 
+    height: 100vh;
     display: flex;
     flex-direction: column;
     background-color: #f1f1f1;
@@ -36,7 +43,9 @@ body {
     color: var(--text-color);
 }
 
-/* Header Content */
+/* ==========================================================================
+   Header Content Styles
+   ========================================================================== */
 .main-header {
     width: 100%;
     background-color: var(--primary-color);
@@ -109,7 +118,9 @@ body {
     text-decoration: underline;
 }
 
-/* Page Title */
+/* ==========================================================================
+   Page Title Section
+   ========================================================================== */
 .page-title {
     padding: 15px 25px;
     font-size: 1.25rem;
@@ -137,7 +148,9 @@ body {
     width: 170px;
 }
 
-/* Main Content */
+/* ==========================================================================
+   Main Content Area
+   ========================================================================== */
 .container {
     flex: 1;
     padding: 20px 25px;
@@ -148,7 +161,9 @@ body {
     width: 100%;
 }
 
-/* Action Buttons */
+/* ==========================================================================
+   Action Buttons
+   ========================================================================== */
 .action-button {
     background-color: var(--primary-color);
     color: var(--white);
@@ -177,7 +192,9 @@ body {
     box-shadow: var(--shadow-md);
 }
 
-/* Tabs */
+/* ==========================================================================
+   Tabs Navigation
+   ========================================================================== */
 .tab-container {
     display: flex;
     gap: 0.5rem;
@@ -222,7 +239,9 @@ body {
     font-weight: 600;
 }
 
-/* Attachment Viewer */
+/* ==========================================================================
+   Attachment Viewer
+   ========================================================================== */
 .attachment-viewer {
     background-color: var(--white);
     border-radius: var(--radius-lg);
@@ -277,11 +296,10 @@ body {
     cursor: not-allowed;
 }
 
-
 .attachment-content {
     flex: 1;
     min-height: 100vh;
-    padding: 0; 
+    padding: 0;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -296,7 +314,6 @@ body {
     display: block;
 }
 
-
 .attachment-content img,
 .attachment-content video,
 .attachment-content audio,
@@ -310,7 +327,6 @@ body {
     border: none;
 }
 
-/* SVG container */
 .svg-container {
     width: 100%;
     height: 100%;
@@ -325,7 +341,9 @@ body {
     max-height: 70vh;
 }
 
-/* Messages */
+/* ==========================================================================
+   Messages (No Data, Loading, Error)
+   ========================================================================== */
 .no-data {
     display: flex;
     flex-direction: column;
@@ -367,7 +385,6 @@ body {
     to { transform: rotate(360deg); }
 }
 
-/* Error Message */
 .error-message {
     color: #e53e3e;
     padding: 1rem;
@@ -379,7 +396,9 @@ body {
     border: 1px solid #fed7d7;
 }
 
-/* Responsive Design */
+/* ==========================================================================
+   Responsive Design
+   ========================================================================== */
 @media (max-width: 768px) {
     .page-title {
         flex-direction: column;
@@ -387,55 +406,55 @@ body {
         gap: 15px;
         padding: 15px 10px;
     }
-    
+
     .page-title h2 {
         order: -1;
         margin-bottom: 5px;
     }
-    
+
     .button-group {
         width: 100%;
         justify-content: center;
         display: flex;
         gap: 10px;
     }
-    
+
     .action-button {
         padding: 0.5rem 1rem;
         font-size: 0.9rem;
     }
-    
+
     .file-name {
         max-width: 60%;
         font-size: 0.95rem;
     }
-    
+
     .attachment-content {
         min-height: 40vh;
         padding: 10px;
     }
-    
+
     .tab-button {
         padding: 0.6rem 1rem;
         font-size: 0.85rem;
     }
-    
+
     .main-header {
         padding: 10px 15px;
     }
-    
+
     .logo img {
         height: 30px;
     }
-    
+
     .container {
         padding: 10px 15px;
     }
-    
+
     .sub-header {
         padding: 15px;
     }
-    
+
     .head-line {
         font-size: 1.25rem;
     }
@@ -450,27 +469,27 @@ body {
         flex-direction: column;
         gap: 8px;
     }
-    
+
     .action-button {
         width: 100%;
         justify-content: center;
     }
-    
+
     .attachment-header {
         flex-direction: column;
         gap: 10px;
         align-items: flex-start;
     }
-    
+
     .file-name {
         max-width: 100%;
         margin-bottom: 5px;
     }
-    
+
     .tab-container {
         margin-bottom: 10px;
     }
-    
+
     .attachment-content {
         min-height: 50vh;
     }

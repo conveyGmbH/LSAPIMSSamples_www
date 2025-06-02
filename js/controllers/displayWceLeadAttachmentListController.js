@@ -262,7 +262,7 @@ function updatePageTitle() {
   if (titleElement) {
     if (leadId) {
       titleElement.textContent = `Attachments -  Lead ID: ${leadId}`;
-      titleElement.style.color = 'grey';
+      titleElement.style.color = '#495057';
       titleElement.style.fontSize = '1.2rem';
     } else {
       titleElement.textContent = 'Attachments';

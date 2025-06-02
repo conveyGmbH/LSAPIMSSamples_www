@@ -8,6 +8,7 @@ export default class ApiService {
 
   async request(method, endpoint, data = null) {
     const errorElement = document.getElementById("errorMessage");
+
     if (errorElement) errorElement.style.display = "none";
 
     try {
@@ -73,6 +74,7 @@ export default class ApiService {
   // Method to fetch the next set of rows using the __next URL
   async fetchNextRows(nextUrl) {
     const errorElement = document.getElementById("errorMessage");
+    
     if (errorElement) errorElement.style.display = "none";
 
     try {

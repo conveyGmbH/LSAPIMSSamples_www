@@ -1,29 +1,47 @@
 
+
+/**
+ * Microsoft Dynamics 365 Configuration - Pure Frontend
+ */
 export const DynamicsConfig = {
-  // Storage keys
+  
+  // Storage Keys  
   STORAGE_KEYS: {
     CLIENT_ID: 'DYNAMICS_CLIENT_ID',
     TENANT_ID: 'DYNAMICS_TENANT_ID',
     RESOURCE_URL: 'DYNAMICS_RESOURCE_URL'
   },
 
+
   // MSAL Configuration
+ 
   MSAL_CONFIG: {
     cache: {
-      cacheLocation: "sessionStorage",
+      cacheLocation: "sessionStorage", // Tab isolation
       storeAuthStateInCookie: false
     }
   },
 
+ 
   // API Configuration
+  
   API: {
-    VERSION: 'v9.2',
+    VERSION: '9.2',
     WHO_AM_I_ENDPOINT: 'WhoAmI',
     LEADS_ENDPOINT: 'leads',
     ANNOTATIONS_ENDPOINT: 'annotations'
   },
 
-  // Validation helpers
+  
+  // Default scopes  
+  DEFAULT_SCOPES: (resourceUrl) => [
+    `${resourceUrl}/user_impersonation`,
+    "openid",
+    "profile"
+  ],
+
+  
+  // Validation helpers  
   VALIDATORS: {
     isValidGuid: (guid) => {
       const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -50,14 +68,8 @@ export const DynamicsConfig = {
     }
   },
 
-  // Default scopes for Dynamics 365
-  DEFAULT_SCOPES: (resourceUrl) => [
-    `${resourceUrl}/user_impersonation`,
-    "openid",
-    "profile"
-  ],
-
-  // Error messages
+  
+  // Error messages  
   ERRORS: {
     MISSING_CONFIG: 'Dynamics 365 configuration is missing or incomplete',
     INVALID_CLIENT_ID: 'Client ID must be a valid GUID',

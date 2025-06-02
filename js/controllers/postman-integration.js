@@ -166,12 +166,12 @@ document.addEventListener('DOMContentLoaded', function() {
             // Download collection button
             document.getElementById('downloadBtn').addEventListener('click', function() {
                 // Path to JSON collection file
-                const jsonFileUrl = `${window.location.origin}/postman/LeadSuccess-API-Collection.json`;
+                const jsonFileUrl = `${window.location.origin}/postman/LeadSuccess-APi-Dynamics-Collection.json`;
 
                 // Create download link
                 const downloadLink = document.createElement('a');
                 downloadLink.href = jsonFileUrl;
-                downloadLink.download = 'LeadSuccess-API-Collection.json';
+                downloadLink.download = 'LeadSuccess-APi-Dynamics-Collection.json';
                 document.body.appendChild(downloadLink);
                 downloadLink.click();
                 document.body.removeChild(downloadLink);
