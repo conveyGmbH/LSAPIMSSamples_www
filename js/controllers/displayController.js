@@ -6,12 +6,10 @@ const serverName = sessionStorage.getItem('serverName');
 const apiName = sessionStorage.getItem('apiName');
 const credentials = sessionStorage.getItem('credentials');
 
-/* Dynamic entity configuration.
- * Defines display names for fields, selectable entities, and date fields.
- */
+/* Dynamic entity configuration */
 const entityConfig = {
   activatingEntities: ['WCE_Event'], 
-  defaultEntity: 'WCE_Country',      
+  defaultEntity: 'WCE_Country',
 
   // User-friendly display names for columns
   displayNames: {
@@ -46,10 +44,7 @@ const entityConfig = {
   dateFields: ['CreatedOn', 'ModifiedOn', 'StartDate', 'EndDate', 'SystemModstamp', 'ModifiedBySystemOn']
 };
 
-/**
- * Filter configurations for specific entities.
- * Defines which fields are filterable and their type.
- */
+/* Filter configurations for specific entities */
 const filterConfigs = {
   WCE_User: [
     { field: 'UserId', displayName: 'ID', type: 'text' },
@@ -73,10 +68,7 @@ const filterConfigs = {
   ]
 };
 
-/**
- * Global application state.
- * Manages UI state, selected items, and dynamic configurations.
- */
+/* Global application state */
 let state = {
   currentEntity: '',
   selectedEventId: null,
@@ -96,9 +88,7 @@ if (!serverName || !apiName || !credentials) {
 // Initialize the API service
 const apiService = new ApiService(serverName, apiName);
 
-/**
- * Initializes the application: loads state, sets up events, fetches data.
- */
+/* Initializes the application: loads state, sets up events, fetches data */
 function init() {
   loadAppState();
   populateApiSelector();
@@ -121,9 +111,7 @@ function init() {
   }
 }
 
-/**
- * Loads application state (column widths, order, hidden columns, selected entity) from localStorage.
- */
+/* Loads application state (column widths, order, hidden columns, selected entity) from localStorage */
 function loadAppState() {
   try {
     const savedColumnWidths = localStorage.getItem('columnWidths');
@@ -201,9 +189,7 @@ function enhanceTableResponsiveness() {
     tableBody.style.minHeight = '300px';
     tableBody.style.padding = '0 6px';
     const table = tableBody.querySelector('table');
-    if (table) {
-      //table.style.minWidth = 'max-content';
-    }
+
   } else {
     tableBody.style.minHeight = '300px';
     tableBody.style.overflowX = 'auto';
@@ -211,7 +197,6 @@ function enhanceTableResponsiveness() {
     const table = tableBody.querySelector('table');
     if (table) {
       table.style.tableLayout = 'auto';
-      //table.style.width = 'max-content';
       table.style.minWidth = '100%';
     }
   }
@@ -1030,7 +1015,7 @@ function initSearch() {
   });
 }
 
-/* Loads the next set of rows (for pagination). */
+/* Loads the next set of rows (for pagination) */
 async function loadNextRows() {
   if (!state.nextUrl) {
     console.error('No next URL found.');

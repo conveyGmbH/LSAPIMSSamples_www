@@ -2,6 +2,10 @@ import DynamicsService from '../services/dynamicsService.js';
 import { formatDate } from '../utils/helper.js';
 import ApiService from '../services/apiService.js';
 
+/**
+ * Controller for lead transfer to Dynamics 365
+ * Handles UI interactions, authentication, and transfer operations
+ */
 class DisplayLeadTransferDynamicsController {
   constructor() {
     this.dynamicsService = DynamicsService.getInstance();
@@ -13,6 +17,10 @@ class DisplayLeadTransferDynamicsController {
 
     this.initializeController();
   }
+
+  // ========================================
+  // INITIALIZATION
+  // ========================================
 
   async initializeController() {
     try {
@@ -46,9 +54,13 @@ class DisplayLeadTransferDynamicsController {
         }
       }
     } catch (error) {
-      console.log('No existing session found:', error.message);
+      // Silent fail for session check
     }
   }
+
+  // ========================================
+  // LEAD DATA MANAGEMENT
+  // ========================================
 
   loadSelectedLead() {
     try {
@@ -73,38 +85,8 @@ class DisplayLeadTransferDynamicsController {
     }
   }
 
-  getFileIcon(contentType, filename) {
-    let iconSvg = "";
-
-    if (!contentType && filename) {
-      const extension = filename.split(".").pop().toLowerCase();
-      if (["jpg", "jpeg", "png", "gif", "bmp", "svg"].includes(extension)) {
-        contentType = "image";
-      } else if (["pdf"].includes(extension)) {
-        contentType = "application/pdf";
-      } else if (["doc", "docx"].includes(extension)) {
-        contentType = "word";
-      } else if (["xls", "xlsx"].includes(extension)) {
-        contentType = "excel";
-      }
-    }
-
-    if (contentType) {
-      if (contentType.startsWith("image/") || contentType === "image") {
-        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
-      } else if (contentType === "application/pdf") {
-        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2-2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`;
-      } else {
-        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2-2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>`;
-      }
-    }
-
-    return iconSvg;
-  }
-
   loadLeadAttachments() {
     try {
-      // Check for pre-fetched attachments first
       const attachmentsData = sessionStorage.getItem('selectedLeadAttachments');
       if (attachmentsData) {
         this.leadAttachments = JSON.parse(attachmentsData);
@@ -124,7 +106,6 @@ class DisplayLeadTransferDynamicsController {
               this.displayLeadAttachments();
             })
             .catch(error => {
-              console.warn('Could not fetch attachment details:', error);
               this.createMockAttachments(attachmentIds);
               this.displayLeadAttachments();
             });
@@ -132,7 +113,6 @@ class DisplayLeadTransferDynamicsController {
         }
       }
 
-      // Try to extract attachments from lead data
       this.extractAttachmentsFromLead();
     } catch (error) {
       console.error('Error loading attachments:', error);
@@ -177,8 +157,6 @@ class DisplayLeadTransferDynamicsController {
             attachmentDetails.push(attachment);
           }
         } catch (attachmentError) {
-          console.warn(`Could not fetch attachment ${attachmentId}:`, attachmentError);
-          
           attachmentDetails.push({
             id: attachmentId,
             name: `Attachment_${attachmentId.substring(0, 8)}`,
@@ -208,76 +186,6 @@ class DisplayLeadTransferDynamicsController {
       hasBody: false,
       source: 'Mock'
     }));
-  }
-
-  displayLeadAttachments() {
-    const attachmentsContainer = document.getElementById('leadAttachments');
-    const attachmentsList = document.getElementById('attachmentsList');
-    const attachmentsCount = document.getElementById('attachmentsCount');
-    
-    if (!attachmentsContainer || !attachmentsList || !attachmentsCount) {
-      console.error('Attachment container elements not found in DOM');
-      return;
-    }
-
-    if (this.leadAttachments.length > 0) {
-      attachmentsContainer.style.display = 'block';
-      
-      let attachmentsHtml = '';
-      this.leadAttachments.forEach((attachment, index) => {
-        const fileExtension = this.getFileExtension(attachment.name);
-        const iconText = fileExtension.substring(0, 3).toUpperCase();
-        
-        const errorClass = attachment.error ? 'attachment-error' : '';
-        const errorIcon = attachment.error ? ' ⚠️' : '';
-        
-        attachmentsHtml += `
-          <div class="attachment-item ${errorClass}">
-            <div class="attachment-icon">${iconText}${errorIcon}</div>
-            <div class="attachment-details">
-              <div class="attachment-name">${this.escapeHtml(attachment.name)}</div>
-              <div class="attachment-meta">
-                ${attachment.type || 'Unknown type'} • ${attachment.size || 'Unknown size'}
-                ${attachment.source ? ` • Source: ${attachment.source}` : ''}
-              </div>
-            </div>
-          </div>
-        `;
-      });
-
-      attachmentsList.innerHTML = attachmentsHtml;
-      attachmentsCount.textContent = `${this.leadAttachments.length} file(s) will be transferred with this lead`;
-    } else {
-      attachmentsContainer.style.display = 'none';
-    }
-  }
-
-  formatFileSize(bytes) {
-    if (!bytes || bytes === 0) return 'Unknown size';
-    
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    const size = (bytes / Math.pow(1024, i)).toFixed(2);
-    
-    return `${size} ${sizes[i]}`;
-  }
-
-  showAttachmentError(message) {
-    const attachmentsContainer = document.getElementById('leadAttachments');
-    const attachmentsList = document.getElementById('attachmentsList');
-    
-    if (attachmentsContainer && attachmentsList) {
-      attachmentsContainer.style.display = 'block';
-      attachmentsList.innerHTML = `
-        <div class="attachment-error-message">
-          <div class="error-icon">⚠️</div>
-          <div class="error-text">
-            <strong>Error loading attachments:</strong><br>
-            ${this.escapeHtml(message)}
-          </div>
-        </div>
-      `;
-    }
   }
 
   extractAttachmentsFromLead() {
@@ -331,125 +239,204 @@ class DisplayLeadTransferDynamicsController {
       return;
     }
 
-    // Check for WCE attachments
-    if (this.selectedLead.WceAttachments || this.selectedLead.wceAttachments) {
-      const wceAttachments = this.selectedLead.WceAttachments || this.selectedLead.wceAttachments;
-      if (Array.isArray(wceAttachments)) {
-        this.leadAttachments = wceAttachments;
-        return;
-      }
-    }
-
-    // Look for URL fields
-    const urlFields = Object.keys(this.selectedLead).filter(key => 
-      key.toLowerCase().includes('url') || 
-      key.toLowerCase().includes('link') || 
-      key.toLowerCase().includes('file')
-    );
-
-    if (urlFields.length > 0) {
-      const urlAttachments = [];
-      urlFields.forEach(field => {
-        const value = this.selectedLead[field];
-        if (value && typeof value === 'string' && (value.startsWith('http') || value.includes('.'))) {
-          urlAttachments.push({
-            name: value.split('/').pop() || field,
-            type: this.getFileTypeFromExtension(value),
-            size: 'Remote file',
-            url: value,
-            source: field
-          });
-        }
-      });
-
-      if (urlAttachments.length > 0) {
-        this.leadAttachments = urlAttachments;
-        return;
-      }
-    }
-
     this.leadAttachments = [];
   }
 
-  getFileTypeFromExtension(filename) {
-    const ext = filename.split('.').pop()?.toLowerCase();
-    const typeMap = {
-      'pdf': 'application/pdf',
-      'doc': 'application/msword',
-      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'xls': 'application/vnd.ms-excel',
-      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'ppt': 'application/vnd.ms-powerpoint',
-      'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      'jpg': 'image/jpeg',
-      'jpeg': 'image/jpeg',
-      'png': 'image/png',
-      'gif': 'image/gif',
-      'svg': 'image/svg+xml',
-      'txt': 'text/plain',
-      'csv': 'text/csv'
+  // ========================================
+  // UI DISPLAY METHODS
+  // ========================================
+
+  displayLeadData() {
+    const leadDataContainer = document.getElementById('leadData');
+    if (!leadDataContainer) {
+      console.error('Lead data container not found');
+      return;
+    }
+
+    if (!this.selectedLead) {
+      leadDataContainer.innerHTML = '<div class="no-data">No lead data available</div>';
+      return;
+    }
+
+    const leadHtml = this.buildLeadDataHTML();
+    leadDataContainer.innerHTML = leadHtml;
+
+    this.displayLeadAttachments();
+  }
+
+  buildLeadDataHTML() {
+    if (!this.selectedLead) {
+      return '<div class="no-data">No lead data available</div>';
+    }
+
+    // Lead header info
+    const leadId = this.getLeadProperty(['LeadId', 'leadId', 'id', 'Id']) || 'N/A';
+    const topic = this.getLeadProperty(['Topic', 'topic', 'Subject', 'subject']) || 'N/A';
+    const createdOn = this.getLeadProperty(['CreatedOn', 'createdOn', 'CreatedDate', 'DateCreated']) || null;
+    
+    const formattedDate = createdOn ? formatDate(createdOn) : 'N/A';
+
+    let headerHtml = `
+      <div class="lead-header-info">
+        <div class="lead-id"><strong>Lead ID:</strong> ${this.escapeHtml(leadId)}</div>
+        <div class="lead-topic"><strong>Topic:</strong> ${this.escapeHtml(topic)}</div>
+        <div class="lead-created"><strong>Created On:</strong> ${formattedDate}</div>
+      </div>
+    `;
+
+    // Field display names mapping
+    const fieldDisplayNames = {
+      'KontaktViewId': 'Kontakt View ID',
+      'LeadId': 'Lead ID',
+      'CreatedOn': 'Created Date',
+      'ModifiedOn': 'Modified Date',
+      'CreatedBy': 'Created By',
+      'ModifiedBy': 'Modified By',
+      'Salutation': 'Salutation',
+      'Suffix': 'Suffix',
+      'FirstName': 'First Name',
+      'MiddleName': 'Middle Name',
+      'LastName': 'Last Name',
+      'CompanyName': 'Company Name',
+      'JobTitle': 'Job Title',
+      'Address1_Telephone1': 'Phone',
+      'MobilePhone': 'Mobile Phone',
+      'Address1_Fax': 'Fax',
+      'EMailAddress1': 'Email',
+      'WebSiteUrl': 'Website',
+      'Address1_Line1': 'Address Line 1',
+      'Address1_PostalCode': 'Postal Code',
+      'Address1_City': 'City',
+      'Address1_Country': 'Country',
+      'Address1_CountryISOCode': 'Country ISO Code',
+      'Address1_StateOrProvince': 'State/Province',
+      'Description': 'Description',
+      'AttachmentIdList': 'Attachment IDs',
+      'SalesArea': 'Sales Area',
+      'RequestBarcode': 'Request Barcode',
+      'StatusMessage': 'Status Message',
+      'DeviceId': 'Device ID',
+      'DeviceRecordId': 'Device Record ID',
+      'ModifiedBySystemOn': 'System Modified Date',
+      'EventId': 'Event ID',
+      'Gender': 'Gender',
+      'Topic': 'Topic',
+      'Newsletter': 'Newsletter',
+      'Department': 'Department',
+      'DisplayName': 'Display Name',
+      'IsReviewed': 'Is Reviewed',
+      'DepartmentText': 'Department Text'
     };
-    return typeMap[ext] || 'application/octet-stream';
-  }
 
-  getFileTypeFromDataUrl(dataUrl) {
-    if (dataUrl.startsWith('data:')) {
-      return dataUrl.split(';')[0].split(':')[1];
-    }
-    return 'application/octet-stream';
-  }
+    const dateFields = ['CreatedOn', 'ModifiedOn', 'ModifiedBySystemOn'];
+    const excludeFields = ['__metadata'];
+    const fullWidthFields = ['Description', 'AttachmentIdList', 'StatusMessage'];
 
-  getExtensionFromDataUrl(dataUrl) {
-    if (dataUrl.startsWith('data:')) {
-      const mimeType = dataUrl.split(';')[0].split(':')[1];
-      const extMap = {
-        'application/pdf': 'pdf',
-        'image/jpeg': 'jpg',
-        'image/png': 'png',
-        'image/gif': 'gif',
-        'image/svg+xml': 'svg',
-        'text/plain': 'txt'
-      };
-      return extMap[mimeType] || 'file';
-    }
-    return 'file';
-  }
+    const allFields = Object.keys(this.selectedLead).filter(field => 
+      !excludeFields.includes(field) && 
+      this.selectedLead[field] !== null && 
+      this.selectedLead[field] !== undefined &&
+      this.selectedLead[field] !== ''
+    );
 
-  loadRecentTransfers() {
-    try {
-      const transfersData = localStorage.getItem('dynamics_recent_transfers');
-      if (transfersData) {
-        this.recentTransfers = JSON.parse(transfersData);
-      }
-    } catch (error) {
-      console.error('Error loading recent transfers:', error);
-      this.recentTransfers = [];
-    }
-  }
+    let fieldsHtml = '<div class="lead-fields-grid">';
+    let fieldsDisplayed = 0;
 
-  saveRecentTransfer(transferData) {
-    try {
-      const transfer = {
-        id: Date.now(),
-        leadName: this.getLeadDisplayName(),
-        leadId: transferData.leadId,
-        dynamicsUrl: transferData.dynamicsUrl,
-        timestamp: new Date().toISOString(),
-        status: 'success'
-      };
+    const priorityFields = ['LeadId', 'FirstName', 'LastName', 'CompanyName', 'EMailAddress1', 'Address1_Telephone1', 'MobilePhone', 'Topic'];
+    const sortedFields = [
+      ...priorityFields.filter(field => allFields.includes(field)),
+      ...allFields.filter(field => !priorityFields.includes(field))
+    ];
 
-      this.recentTransfers.unshift(transfer);
+    sortedFields.forEach(field => {
+      const value = this.selectedLead[field];
       
-      if (this.recentTransfers.length > 10) {
-        this.recentTransfers = this.recentTransfers.slice(0, 10);
+      if (value !== null && value !== undefined && value.toString().trim() !== '') {
+        const displayName = fieldDisplayNames[field] || field;
+        let displayValue = value;
+        
+        if (dateFields.includes(field)) {
+          displayValue = formatDate(value);
+        }
+        
+        if (typeof value === 'boolean' || (typeof value === 'number' && (value === 0 || value === 1))) {
+          displayValue = value === true || value === 1 ? 'Yes' : 'No';
+        }
+        
+        const isLongContent = fullWidthFields.includes(field) || (displayValue && displayValue.toString().length > 50);
+        const fieldClass = isLongContent ? 'field-item full-width' : 'field-item';
+        
+        fieldsHtml += `
+          <div class="${fieldClass}">
+            <label class="field-label">${displayName}:</label>
+            <div class="field-value ${isLongContent ? 'long-text' : ''}">${this.escapeHtml(displayValue.toString())}</div>
+          </div>
+        `;
+        fieldsDisplayed++;
       }
+    });
 
-      localStorage.setItem('dynamics_recent_transfers', JSON.stringify(this.recentTransfers));
-      this.displayRecentTransfers();
-    } catch (error) {
-      console.error('Error saving recent transfer:', error);
+    fieldsHtml += '</div>';
+
+    if (fieldsDisplayed === 0) {
+      fieldsHtml += `
+        <div class="debug-info">
+          <h4>Debug: Raw Lead Data</h4>
+          <pre style="background: #f5f5f5; padding: 10px; font-size: 12px; overflow-x: auto;">
+${JSON.stringify(this.selectedLead, null, 2)}
+          </pre>
+        </div>
+      `;
+    }
+
+    return headerHtml + fieldsHtml;
+  }
+
+  displayLeadAttachments() {
+    const attachmentsContainer = document.getElementById('leadAttachments');
+    const attachmentsList = document.getElementById('attachmentsList');
+    const attachmentsCount = document.getElementById('attachmentsCount');
+    
+    if (!attachmentsContainer || !attachmentsList || !attachmentsCount) {
+      console.error('Attachment container elements not found in DOM');
+      return;
+    }
+
+    if (this.leadAttachments.length > 0) {
+      attachmentsContainer.style.display = 'block';
+      
+      let attachmentsHtml = '';
+      this.leadAttachments.forEach((attachment, index) => {
+        const fileExtension = this.getFileExtension(attachment.name);
+        const iconText = fileExtension.substring(0, 3).toUpperCase();
+        
+        const errorClass = attachment.error ? 'attachment-error' : '';
+        const errorIcon = attachment.error ? ' ⚠️' : '';
+        
+        attachmentsHtml += `
+          <div class="attachment-item ${errorClass}">
+            <div class="attachment-icon">${iconText}${errorIcon}</div>
+            <div class="attachment-details">
+              <div class="attachment-name">${this.escapeHtml(attachment.name)}</div>
+              <div class="attachment-meta">
+                ${attachment.type || 'Unknown type'} • ${attachment.size || 'Unknown size'}
+                ${attachment.source ? ` • Source: ${attachment.source}` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      attachmentsList.innerHTML = attachmentsHtml;
+      attachmentsCount.textContent = `${this.leadAttachments.length} file(s) will be transferred with this lead`;
+    } else {
+      attachmentsContainer.style.display = 'none';
     }
   }
+
+  // ========================================
+  // EVENT LISTENERS
+  // ========================================
 
   setupEventListeners() {
     const backButton = document.getElementById('backButton');
@@ -522,174 +509,9 @@ class DisplayLeadTransferDynamicsController {
     });
   }
 
-  displayLeadData() {
-    const leadDataContainer = document.getElementById('leadData');
-    if (!leadDataContainer) {
-      console.error('Lead data container not found');
-      return;
-    }
-
-    if (!this.selectedLead) {
-      leadDataContainer.innerHTML = '<div class="no-data">No lead data available</div>';
-      return;
-    }
-
-    const leadHtml = this.buildLeadDataHTML();
-    leadDataContainer.innerHTML = leadHtml;
-
-    this.displayLeadAttachments();
-  }
-
-  getFileExtension(filename) {
-    return filename.split('.').pop() || 'file';
-  }
-
-  buildLeadDataHTML() {
-    if (!this.selectedLead) {
-      return '<div class="no-data">No lead data available</div>';
-    }
-
-    // Lead header info
-    const leadId = this.getLeadProperty(['LeadId', 'leadId', 'id', 'Id']) || 'N/A';
-    const topic = this.getLeadProperty(['Topic', 'topic', 'Subject', 'subject']) || 'N/A';
-    const createdOn = this.getLeadProperty(['CreatedOn', 'createdOn', 'CreatedDate', 'DateCreated']) || null;
-    
-    const formattedDate = createdOn ? formatDate(createdOn) : 'N/A';
-
-    let headerHtml = `
-      <div class="lead-header-info">
-        <div class="lead-id"><strong>Lead ID:</strong> ${this.escapeHtml(leadId)}</div>
-        <div class="lead-topic"><strong>Topic:</strong> ${this.escapeHtml(topic)}</div>
-        <div class="lead-created"><strong>Created On:</strong> ${formattedDate}</div>
-      </div>
-    `;
-
-    // Field display names mapping
-    const fieldDisplayNames = {
-      'KontaktViewId': 'Kontakt View ID',
-      'LeadId': 'Lead ID',
-      'CreatedOn': 'Created Date',
-      'ModifiedOn': 'Modified Date',
-      'CreatedBy': 'Created By',
-      'ModifiedBy': 'Modified By',
-      'Salutation': 'Salutation',
-      'Suffix': 'Suffix',
-      'FirstName': 'First Name',
-      'MiddleName': 'Middle Name',
-      'LastName': 'Last Name',
-      'CompanyName': 'Company Name',
-      'JobTitle': 'Job Title',
-      'Address1_Telephone1': 'Phone',
-      'MobilePhone': 'Mobile Phone',
-      'Address1_Fax': 'Fax',
-      'EMailAddress1': 'Email',
-      'WebSiteUrl': 'Website',
-      'Address1_Line1': 'Address Line 1',
-      'Address1_PostalCode': 'Postal Code',
-      'Address1_City': 'City',
-      'Address1_Country': 'Country',
-      'Address1_CountryISOCode': 'Country ISO Code',
-      'Address1_StateOrProvince': 'State/Province',
-      'Description': 'Description',
-      'AttachmentIdList': 'Attachment IDs',
-      'SalesArea': 'Sales Area',
-      'RequestBarcode': 'Request Barcode',
-      'StatusMessage': 'Status Message',
-      'DeviceId': 'Device ID',
-      'DeviceRecordId': 'Device Record ID',
-      'ModifiedBySystemOn': 'System Modified Date',
-      'EventId': 'Event ID',
-      'Gender': 'Gender',
-      'Topic': 'Topic',
-      'Newsletter': 'Newsletter',
-      'Department': 'Department',
-      'DisplayName': 'Display Name',
-      'IsReviewed': 'Is Reviewed',
-      'DepartmentText': 'Department Text'
-    };
-
-    const dateFields = ['CreatedOn', 'ModifiedOn', 'ModifiedBySystemOn'];
-    const excludeFields = ['__metadata'];
-    const fullWidthFields = ['Description', 'AttachmentIdList', 'StatusMessage'];
-
-    // Get all available fields from the lead data
-    const allFields = Object.keys(this.selectedLead).filter(field => 
-      !excludeFields.includes(field) && 
-      this.selectedLead[field] !== null && 
-      this.selectedLead[field] !== undefined &&
-      this.selectedLead[field] !== ''
-    );
-
-    let fieldsHtml = '<div class="lead-fields-grid">';
-    let fieldsDisplayed = 0;
-
-    // Sort fields with priority fields first
-    const priorityFields = ['LeadId', 'FirstName', 'LastName', 'CompanyName', 'EMailAddress1', 'Address1_Telephone1', 'MobilePhone', 'Topic'];
-    const sortedFields = [
-      ...priorityFields.filter(field => allFields.includes(field)),
-      ...allFields.filter(field => !priorityFields.includes(field))
-    ];
-
-    sortedFields.forEach(field => {
-      const value = this.selectedLead[field];
-      
-      if (value !== null && value !== undefined && value.toString().trim() !== '') {
-        const displayName = fieldDisplayNames[field] || field;
-        let displayValue = value;
-        
-        // Format date fields
-        if (dateFields.includes(field)) {
-          displayValue = formatDate(value);
-        }
-        
-        // Handle boolean fields
-        if (typeof value === 'boolean' || (typeof value === 'number' && (value === 0 || value === 1))) {
-          displayValue = value === true || value === 1 ? 'Yes' : 'No';
-        }
-        
-        const isLongContent = fullWidthFields.includes(field) || (displayValue && displayValue.toString().length > 50);
-        const fieldClass = isLongContent ? 'field-item full-width' : 'field-item';
-        
-        fieldsHtml += `
-          <div class="${fieldClass}">
-            <label class="field-label">${displayName}:</label>
-            <div class="field-value ${isLongContent ? 'long-text' : ''}">${this.escapeHtml(displayValue.toString())}</div>
-          </div>
-        `;
-        fieldsDisplayed++;
-      }
-    });
-
-    fieldsHtml += '</div>';
-
-    // If no fields displayed, show debug info
-    if (fieldsDisplayed === 0) {
-      console.warn('No fields displayed, showing raw data for debugging');
-      fieldsHtml += `
-        <div class="debug-info">
-          <h4>Debug: Raw Lead Data</h4>
-          <pre style="background: #f5f5f5; padding: 10px; font-size: 12px; overflow-x: auto;">
-${JSON.stringify(this.selectedLead, null, 2)}
-          </pre>
-        </div>
-      `;
-    }
-
-    return headerHtml + fieldsHtml;
-  }
-
-  getLeadProperty(possibleNames) {
-    if (!this.selectedLead || !Array.isArray(possibleNames)) {
-      return null;
-    }
-
-    for (const name of possibleNames) {
-      if (this.selectedLead.hasOwnProperty(name) && this.selectedLead[name] != null) {
-        return this.selectedLead[name];
-      }
-    }
-    return null;
-  }
+  // ========================================
+  // CONFIGURATION MODAL
+  // ========================================
 
   openConfigModal() {
     const modal = document.getElementById('dynamicsConfigModal');
@@ -782,6 +604,10 @@ ${JSON.stringify(this.selectedLead, null, 2)}
     }
   }
 
+  // ========================================
+  // AUTHENTICATION HANDLERS
+  // ========================================
+
   async handleAuthenticate() {
     if (this.isAuthenticating) return;
 
@@ -826,7 +652,6 @@ ${JSON.stringify(this.selectedLead, null, 2)}
       console.error('Disconnect error:', error);
       
       try {
-        // Fallback cleanup
         if (this.dynamicsService.msalInstance) {
           await this.dynamicsService.msalInstance.clearCache();
         }
@@ -844,6 +669,10 @@ ${JSON.stringify(this.selectedLead, null, 2)}
       }
     }
   }
+
+  // ========================================
+  // TRANSFER FUNCTIONALITY
+  // ========================================
 
   async handleTransfer() {
     if (!this.selectedLead) {
@@ -906,10 +735,43 @@ ${JSON.stringify(this.selectedLead, null, 2)}
     this.showSuccess('Lead successfully transferred to Dynamics 365!');
   }
 
-  hideTransferResults() {
-    const resultsDiv = document.getElementById('transferResults');
-    if (resultsDiv) {
-      resultsDiv.style.display = 'none';
+  // ========================================
+  // RECENT TRANSFERS
+  // ========================================
+
+  loadRecentTransfers() {
+    try {
+      const transfersData = localStorage.getItem('dynamics_recent_transfers');
+      if (transfersData) {
+        this.recentTransfers = JSON.parse(transfersData);
+      }
+    } catch (error) {
+      console.error('Error loading recent transfers:', error);
+      this.recentTransfers = [];
+    }
+  }
+
+  saveRecentTransfer(transferData) {
+    try {
+      const transfer = {
+        id: Date.now(),
+        leadName: this.getLeadDisplayName(),
+        leadId: transferData.leadId,
+        dynamicsUrl: transferData.dynamicsUrl,
+        timestamp: new Date().toISOString(),
+        status: 'success'
+      };
+
+      this.recentTransfers.unshift(transfer);
+      
+      if (this.recentTransfers.length > 10) {
+        this.recentTransfers = this.recentTransfers.slice(0, 10);
+      }
+
+      localStorage.setItem('dynamics_recent_transfers', JSON.stringify(this.recentTransfers));
+      this.displayRecentTransfers();
+    } catch (error) {
+      console.error('Error saving recent transfer:', error);
     }
   }
 
@@ -947,6 +809,10 @@ ${JSON.stringify(this.selectedLead, null, 2)}
       recentTransfersDiv.style.display = 'none';
     }
   }
+
+  // ========================================
+  // UI UPDATES
+  // ========================================
 
   updateUI() {
     const status = this.dynamicsService.getConnectionStatus();
@@ -1048,6 +914,17 @@ ${JSON.stringify(this.selectedLead, null, 2)}
     }
   }
 
+  updateConfigButton(status) {
+    const configBtn = document.getElementById('dynamicsConfigButton');
+    if (configBtn) {
+      configBtn.textContent = status.isConfigured ? '⚙️ Reconfigure Dynamics CRM' : '⚙️ Configure Dynamics CRM';
+    }
+  }
+
+  // ========================================
+  // UTILITY METHODS
+  // ========================================
+
   showLoading(text) {
     let loadingModal = document.getElementById('loadingModal');
     if (!loadingModal) {
@@ -1077,13 +954,6 @@ ${JSON.stringify(this.selectedLead, null, 2)}
     }
   }
 
-  updateConfigButton(status) {
-    const configBtn = document.getElementById('dynamicsConfigButton');
-    if (configBtn) {
-      configBtn.textContent = status.isConfigured ? '⚙️ Reconfigure Dynamics CRM' : '⚙️ Configure Dynamics CRM';
-    }
-  }
-
   getLeadDisplayName() {
     if (!this.selectedLead) return 'Unknown Lead';
     
@@ -1093,6 +963,77 @@ ${JSON.stringify(this.selectedLead, null, 2)}
     
     const fullName = `${firstName} ${lastName}`.trim();
     return fullName || companyName || 'Unknown Lead';
+  }
+
+  getLeadProperty(possibleNames) {
+    if (!this.selectedLead || !Array.isArray(possibleNames)) {
+      return null;
+    }
+
+    for (const name of possibleNames) {
+      if (this.selectedLead.hasOwnProperty(name) && this.selectedLead[name] != null) {
+        return this.selectedLead[name];
+      }
+    }
+    return null;
+  }
+
+  formatFileSize(bytes) {
+    if (!bytes || bytes === 0) return 'Unknown size';
+    
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    const size = (bytes / Math.pow(1024, i)).toFixed(2);
+    
+    return `${size} ${sizes[i]}`;
+  }
+
+  getFileExtension(filename) {
+    return filename.split('.').pop() || 'file';
+  }
+
+  getFileTypeFromExtension(filename) {
+    const ext = filename.split('.').pop()?.toLowerCase();
+    const typeMap = {
+      'pdf': 'application/pdf',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'xls': 'application/vnd.ms-excel',
+      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'ppt': 'application/vnd.ms-powerpoint',
+      'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'svg': 'image/svg+xml',
+      'txt': 'text/plain',
+      'csv': 'text/csv'
+    };
+    return typeMap[ext] || 'application/octet-stream';
+  }
+
+  getFileTypeFromDataUrl(dataUrl) {
+    if (dataUrl.startsWith('data:')) {
+      return dataUrl.split(';')[0].split(':')[1];
+    }
+    return 'application/octet-stream';
+  }
+
+  getExtensionFromDataUrl(dataUrl) {
+    if (dataUrl.startsWith('data:')) {
+      const mimeType = dataUrl.split(';')[0].split(':')[1];
+      const extMap = {
+        'application/pdf': 'pdf',
+        'image/jpeg': 'jpg',
+        'image/png': 'png',
+        'image/gif': 'gif',
+        'image/svg+xml': 'svg',
+        'text/plain': 'txt'
+      };
+      return extMap[mimeType] || 'file';
+    }
+    return 'file';
   }
 
   escapeHtml(text) {

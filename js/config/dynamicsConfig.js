@@ -1,20 +1,16 @@
-
-
-/**
- * Microsoft Dynamics 365 Configuration - Pure Frontend
+/* Microsoft Dynamics 365 Configuration
+ * Central configuration file for Dynamics 365 integration
  */
 export const DynamicsConfig = {
   
-  // Storage Keys  
+  // Storage keys for localStorage
   STORAGE_KEYS: {
     CLIENT_ID: 'DYNAMICS_CLIENT_ID',
     TENANT_ID: 'DYNAMICS_TENANT_ID',
     RESOURCE_URL: 'DYNAMICS_RESOURCE_URL'
   },
 
-
   // MSAL Configuration
- 
   MSAL_CONFIG: {
     cache: {
       cacheLocation: "sessionStorage", // Tab isolation
@@ -22,9 +18,7 @@ export const DynamicsConfig = {
     }
   },
 
- 
   // API Configuration
-  
   API: {
     VERSION: '9.2',
     WHO_AM_I_ENDPOINT: 'WhoAmI',
@@ -32,19 +26,17 @@ export const DynamicsConfig = {
     ANNOTATIONS_ENDPOINT: 'annotations'
   },
 
-  
-  // Default scopes  
+  // Default scopes for authentication
   DEFAULT_SCOPES: (resourceUrl) => [
     `${resourceUrl}/user_impersonation`,
     "openid",
     "profile"
   ],
 
-  
-  // Validation helpers  
+  // Validation helpers
   VALIDATORS: {
     isValidGuid: (guid) => {
-      const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       return guidRegex.test(guid);
     },
 
@@ -68,8 +60,7 @@ export const DynamicsConfig = {
     }
   },
 
-  
-  // Error messages  
+  // Error messages
   ERRORS: {
     MISSING_CONFIG: 'Dynamics 365 configuration is missing or incomplete',
     INVALID_CLIENT_ID: 'Client ID must be a valid GUID',
